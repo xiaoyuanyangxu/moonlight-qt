@@ -14,7 +14,7 @@
 #include "dxvsyncsource.h"
 #endif
 
-#define PACING_HISTORY_ENTRIES 8
+#define PACING_HISTORY_ENTRIES 20
 
 // We may be woken up slightly late so don't go all the way
 // up to the next V-sync since we may accidentally step into
@@ -220,19 +220,37 @@ void Pacer::renderFrame(AVFrame* frame)
     m_VideoStats->renderedFrames++;
     av_frame_free(&frame);
 
-    // If a frame has arrived while rendering, our renderer probably
-    // was blocked waiting on V-Sync. Drop a frame to allow the
-    // queued frame to drain.
+    // Drop frames if we have too many queued up for a while
     m_FrameQueueLock.lock();
-    if (!m_RenderQueue.isEmpty()) {
-        frame = m_RenderQueue.dequeue();
+
+    int frameDropTarget = 0;
+    for (int queueHistoryEntry : m_RenderQueueHistory) {
+        if (queueHistoryEntry == 0) {
+            // Be lenient as long as the queue length
+            // resolves before the end of frame history
+            frameDropTarget = 2;
+            break;
+        }
+    }
+
+    if (m_RenderQueueHistory.count() == PACING_HISTORY_ENTRIES) {
+        m_RenderQueueHistory.dequeue();
+    }
+
+    m_RenderQueueHistory.enqueue(m_RenderQueue.count());
+
+    // Catch up if we're several frames ahead
+    while (m_RenderQueue.count() > frameDropTarget) {
+        AVFrame* frame = m_RenderQueue.dequeue();
+
+        // Drop the lock while we call av_frame_free()
         m_FrameQueueLock.unlock();
         m_VideoStats->pacerDroppedFrames++;
         av_frame_free(&frame);
+        m_FrameQueueLock.lock();
     }
-    else {
-        m_FrameQueueLock.unlock();
-    }
+
+    m_FrameQueueLock.unlock();
 }
 
 void Pacer::submitFrame(AVFrame* frame)
