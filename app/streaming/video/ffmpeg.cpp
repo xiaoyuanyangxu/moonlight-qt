@@ -12,6 +12,10 @@
 #include "ffmpeg-renderers/dxva2.h"
 #endif
 
+#ifdef Q_OS_WIN
+#include "ffmpeg-renderers/d3d11va.h"
+#endif
+
 #ifdef Q_OS_DARWIN
 #include "ffmpeg-renderers/vt.h"
 #endif
@@ -407,6 +411,10 @@ IFFmpegRenderer* FFmpegVideoDecoder::createHwAccelRenderer(const AVCodecHWConfig
 #ifdef Q_OS_WIN32
         case AV_HWDEVICE_TYPE_DXVA2:
             return new DXVA2Renderer();
+#endif
+#ifdef Q_OS_WIN
+        case AV_HWDEVICE_TYPE_D3D11VA:
+            return new D3D11VARenderer();
 #endif
 #ifdef Q_OS_DARWIN
         case AV_HWDEVICE_TYPE_VIDEOTOOLBOX:

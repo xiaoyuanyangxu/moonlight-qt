@@ -106,10 +106,11 @@ unix:!macx {
     }
 }
 win32 {
-    LIBS += -llibssl -llibcrypto -lSDL2 -lSDL2_ttf -lavcodec -lavutil -lopus -ld3dx9
+    LIBS += -llibssl -llibcrypto -lSDL2 -lSDL2_ttf -lavcodec -lavutil -lopus -ldxgi -ld3d11
     CONFIG += ffmpeg
 }
 win32:!winrt {
+    LIBS += -ld3dx9
     CONFIG += soundio discord-rpc
 }
 macx {
@@ -269,6 +270,15 @@ win32:!winrt {
     HEADERS += \
         streaming/video/ffmpeg-renderers/dxva2.h \
         streaming/video/ffmpeg-renderers/pacer/dxvsyncsource.h
+}
+win32 {
+    message(D3D11VA renderer selected)
+
+    SOURCES += \
+        streaming/video/ffmpeg-renderers/d3d11va.cpp
+
+    HEADERS += \
+        streaming/video/ffmpeg-renderers/d3d11va.h
 }
 macx {
     message(VideoToolbox renderer selected)
