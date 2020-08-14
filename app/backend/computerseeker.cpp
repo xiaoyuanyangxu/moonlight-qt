@@ -40,6 +40,8 @@ bool ComputerSeeker::matchComputer(NvComputer *computer) const
 {
     QString value = m_ComputerName.toLower();
 
+    qDebug() << Q_FUNC_INFO << value << computer->name << computer->uuid ;
+
     if (computer->name.toLower() == value || computer->uuid.toLower() == value) {
         return true;
     }

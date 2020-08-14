@@ -172,12 +172,16 @@ public:
 
     void pairHost(NvComputer* computer, QString pin);
 
+    void addComputer(NvComputer* computer);
+
     void quitRunningApp(NvComputer* computer);
 
     QVector<NvComputer*> getComputers();
 
     // computer is deleted inside this call
     void deleteHost(NvComputer* computer);
+
+    void deleteAllHosts();
 
     void renameHost(NvComputer* computer, QString name);
 

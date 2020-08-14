@@ -18,5 +18,8 @@
         <file>gui/NavigableMessageDialog.qml</file>
         <file>gui/NavigableDialog.qml</file>
         <file>gui/CenteredGridView.qml</file>
+        <file>gui/Login.qml</file>
+        <file>gui/CliLoginView.qml</file>
+        <file>gui/main_cloud.qml</file>
     </qresource>
 </RCC>

@@ -40,6 +40,7 @@
 #include "streaming/session.h"
 #include "settings/streamingpreferences.h"
 #include "gui/sdlgamepadkeynavigation.h"
+#include "loginlauncher.h"
 
 #if !defined(QT_DEBUG) && defined(Q_OS_WIN32)
 // Log to file for release Windows builds
@@ -517,11 +518,27 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     QString initialView;
 
+    bool notPolling = false;
+    bool cloudView = false;
+
     GlobalCommandLineParser parser;
     switch (parser.parse(app.arguments())) {
     case GlobalCommandLineParser::NormalStartRequested:
-        initialView = "qrc:/gui/PcView.qml";
-        break;
+        {
+            initialView = "qrc:/gui/PcView.qml";
+            break;
+        }
+    case GlobalCommandLineParser::CloudRequested:
+        {
+            initialView = "qrc:/gui/CliLoginView.qml";
+            auto launcher   = new CliLoginLauncher::LoginLauncher("google.com",
+                                                                  &app);
+            engine.rootContext()->setContextProperty("launcher", launcher);
+            notPolling = true;
+            cloudView = true;
+
+            break;
+        }
     case GlobalCommandLineParser::StreamRequested:
         {
             initialView = "qrc:/gui/CliStartStreamSegue.qml";
@@ -543,12 +560,32 @@ int main(int argc, char *argv[])
             engine.rootContext()->setContextProperty("launcher", launcher);
             break;
         }
+    case GlobalCommandLineParser::ExportCertRequested:
+        {
+            qDebug() << "ID:" << IdentityManager::get()->getUniqueId();
+            qDebug() << "Cert:" << IdentityManager::get()->getCertificate();
+            qDebug() << "Key:" << IdentityManager::get()->getPrivateKey();
+
+            return 0;
+
+            break;
+        }
     }
 
+    qDebug() << "ID:" << IdentityManager::get()->getUniqueId();
+    qDebug() << "Cert:" << IdentityManager::get()->getCertificate();
+    qDebug() << "Key:" << IdentityManager::get()->getPrivateKey();
+
     engine.rootContext()->setContextProperty("initialView", initialView);
+    engine.rootContext()->setContextProperty("notPolling", notPolling);
 
     // Load the main.qml file
-    engine.load(QUrl(QStringLiteral("qrc:/gui/main.qml")));
+    if (cloudView)
+    {
+        engine.load(QUrl("qrc:/gui/main_cloud.qml"));
+    }else{
+        engine.load(QUrl("qrc:/gui/main.qml"));
+    }
     if (engine.rootObjects().isEmpty())
         return -1;
 

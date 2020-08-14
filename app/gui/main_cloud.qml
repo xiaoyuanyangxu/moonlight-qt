@@ -8,6 +8,7 @@ import AutoUpdateChecker 1.0
 import StreamingPreferences 1.0
 import SystemProperties 1.0
 import SdlGamepadKeyNavigation 1.0
+import QtQuick.Controls.Styles 1.4
 
 ApplicationWindow {
     property bool pollingActive: false
@@ -16,6 +17,10 @@ ApplicationWindow {
     visible: true
     width: 1280
     height: 600
+
+    background: Rectangle {
+            color: "#000000"
+        }
 
     visibility: (SystemProperties.hasWindowManager && StreamingPreferences.startWindowed) ? "Windowed" : "Maximized"
 
@@ -171,9 +176,14 @@ ApplicationWindow {
 
     header: ToolBar {
         id: toolBar
-        height: 60
+        height: 45
+
         anchors.topMargin: 5
         anchors.bottomMargin: 5
+
+        background: Rectangle {
+                color: "#555555"
+            }
 
         Label {
             id: titleLabel
@@ -192,18 +202,6 @@ ApplicationWindow {
             anchors.rightMargin: 10
             anchors.fill: parent
 
-            NavigableToolButton {
-                // Only make the button visible if the user has navigated somewhere.
-                visible: stackView.depth > 1
-
-                iconSource: "qrc:/res/arrow_left.svg"
-
-                onClicked: stackView.pop()
-
-                Keys.onDownPressed: {
-                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
-                }
-            }
 
             // This label will appear when the window gets too small and
             // we need to ensure the toolbar controls don't collide
@@ -221,143 +219,22 @@ ApplicationWindow {
                 text: !titleLabel.visible ? stackView.currentItem.objectName : ""
             }
 
-            Label {
-                id: versionLabel
-                visible: stackView.currentItem.objectName === "Settings"
-                text: "Version " + SystemProperties.versionString
-                font.pointSize: 12
-                horizontalAlignment: Qt.AlignRight
-                verticalAlignment: Qt.AlignVCenter
-            }
-
             NavigableToolButton {
-                id: addPcButton
-                visible: stackView.currentItem.objectName === "Computers"
+                visible: stackView.depth > 1
+                id: loggoutButton
 
-                iconSource:  "qrc:/res/ic_add_to_queue_white_48px.svg"
-
-                ToolTip.delay: 1000
-                ToolTip.timeout: 3000
-                ToolTip.visible: hovered
-                ToolTip.text: "Add PC manually" + (newPcShortcut.nativeText ? (" ("+newPcShortcut.nativeText+")") : "")
-
-                Shortcut {
-                    id: newPcShortcut
-                    sequence: StandardKey.New
-                    onActivated: addPcButton.clicked()
-                }
+                iconSource:  "qrc:/res/logout.png"
 
                 onClicked: {
-                    addPcDialog.open()
+                    toolBar.visible = false
+                    stackView.pop()
+                    launcher.logout()
+                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
                 }
 
                 Keys.onDownPressed: {
                     stackView.currentItem.forceActiveFocus(Qt.TabFocus)
                 }
-            }
-
-            NavigableToolButton {
-                property string browserUrl: ""
-
-                id: updateButton
-
-                iconSource: "qrc:/res/update.svg"
-
-                ToolTip.delay: 1000
-                ToolTip.timeout: 3000
-                ToolTip.visible: hovered || visible
-
-                // Invisible until we get a callback notifying us that
-                // an update is available
-                visible: false
-
-                onClicked: {
-                    if (SystemProperties.hasBrowser) {
-                        Qt.openUrlExternally(browserUrl);
-                    }
-                }
-
-                function updateAvailable(version, url)
-                {
-                    ToolTip.text = "Update available for Moonlight: Version " + version
-                    updateButton.browserUrl = url
-                    updateButton.visible = true
-                }
-
-                Component.onCompleted: {
-                    AutoUpdateChecker.onUpdateAvailable.connect(updateAvailable)
-                    AutoUpdateChecker.start()
-                }
-
-                Keys.onDownPressed: {
-                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
-                }
-            }
-
-            NavigableToolButton {
-                id: helpButton
-                visible: SystemProperties.hasBrowser
-
-                iconSource: "qrc:/res/question_mark.svg"
-
-                ToolTip.delay: 1000
-                ToolTip.timeout: 3000
-                ToolTip.visible: hovered
-                ToolTip.text: "Help" + (helpShortcut.nativeText ? (" ("+helpShortcut.nativeText+")") : "")
-
-                Shortcut {
-                    id: helpShortcut
-                    sequence: StandardKey.HelpContents
-                    onActivated: helpButton.clicked()
-                }
-
-                // TODO need to make sure browser is brought to foreground.
-                onClicked: Qt.openUrlExternally("https://github.com/moonlight-stream/moonlight-docs/wiki/Setup-Guide");
-
-                Keys.onDownPressed: {
-                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
-                }
-            }
-
-            NavigableToolButton {
-                // TODO: Implement gamepad mapping then unhide this button
-                visible: false
-
-                ToolTip.delay: 1000
-                ToolTip.timeout: 3000
-                ToolTip.visible: hovered
-                ToolTip.text: "Gamepad Mapper"
-
-                iconSource: "qrc:/res/ic_videogame_asset_white_48px.svg"
-
-                onClicked: navigateTo("qrc:/gui/GamepadMapper.qml", "Gamepad Mapping")
-
-                Keys.onDownPressed: {
-                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
-                }
-            }
-
-            NavigableToolButton {
-                id: settingsButton
-
-                iconSource:  "qrc:/res/settings.svg"
-
-                onClicked: navigateTo("qrc:/gui/SettingsView.qml", "Settings")
-
-                Keys.onDownPressed: {
-                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
-                }
-
-                Shortcut {
-                    id: settingsShortcut
-                    sequence: StandardKey.Preferences
-                    onActivated: settingsButton.clicked()
-                }
-
-                ToolTip.delay: 1000
-                ToolTip.timeout: 3000
-                ToolTip.visible: hovered
-                ToolTip.text: "Settings" + (settingsShortcut.nativeText ? (" ("+settingsShortcut.nativeText+")") : "")
             }
         }
     }
@@ -425,45 +302,6 @@ ApplicationWindow {
             // StreamSegue assumes its dialog will be re-created each time we
             // start streaming, so fake it by wiping out the text each time.
             text = ""
-        }
-    }
-
-    NavigableDialog {
-        id: addPcDialog
-        property string label: "Enter the IP address of your GameStream PC:"
-
-        standardButtons: Dialog.Ok | Dialog.Cancel
-
-        onOpened: {
-            // Force keyboard focus on the textbox so keyboard navigation works
-            editText.forceActiveFocus()
-        }
-
-        onClosed: {
-            editText.clear()
-        }
-
-        onAccepted: {
-            if (editText.text) {
-                ComputerManager.addNewHost(editText.text, false)
-            }
-        }
-
-        ColumnLayout {
-            Label {
-                text: addPcDialog.label
-                font.bold: true
-            }
-
-            TextField {
-                id: editText
-                Layout.fillWidth: true
-                focus: true
-
-                Keys.onReturnPressed: {
-                    addPcDialog.accept()
-                }
-            }
         }
     }
 }

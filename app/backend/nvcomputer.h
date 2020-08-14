@@ -23,6 +23,8 @@ public:
 
     explicit NvComputer(QSettings& settings);
 
+    explicit NvComputer(QString name, QString ip, QString uuid, QString cert);
+
     bool
     update(NvComputer& that);
 

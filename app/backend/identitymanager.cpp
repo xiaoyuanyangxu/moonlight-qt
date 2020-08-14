@@ -101,6 +101,23 @@ void IdentityManager::createCredentials(QSettings& settings)
     qInfo() << "Wrote new identity credentials to settings";
 }
 
+bool IdentityManager::setCertificated(QString cert, QString key, QString id)
+{
+    m_CachedPemCert = cert.toUtf8();
+    m_CachedPrivateKey = key.toUtf8();
+    m_CachedUniqueId = id;
+
+    if (getSslCertificate().isNull()){
+        qWarning() << "Certificate is unreadable";
+        return false;
+    }
+    else if (getSslKey().isNull()) {
+        qWarning() << "Private key is unreadable";
+        return false;
+    }
+    return true;
+}
+
 IdentityManager::IdentityManager()
 {
     QSettings settings;

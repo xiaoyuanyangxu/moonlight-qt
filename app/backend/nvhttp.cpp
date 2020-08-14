@@ -97,6 +97,8 @@ NvHTTP::getServerInfo(NvLogLevel logLevel, bool fastFail)
 {
     QString serverInfo;
 
+    qDebug() << Q_FUNC_INFO << ((m_ServerCert.isNull())?"Cert is NULL":"WithCert");
+
     // Check if we have a pinned cert for this host yet
     if (!m_ServerCert.isNull())
     {
@@ -117,6 +119,7 @@ NvHTTP::getServerInfo(NvLogLevel logLevel, bool fastFail)
             if (e.getStatusCode() == 401)
             {
                 // Certificate validation error, fallback to HTTP
+                qDebug() << Q_FUNC_INFO << " SSL certificate validation error";
                 serverInfo = openConnectionToString(m_BaseUrlHttp,
                                                     "serverinfo",
                                                     nullptr,
@@ -443,6 +446,8 @@ NvHTTP::openConnection(QUrl baseUrl,
 
     // Add our client certificate
     request.setSslConfiguration(IdentityManager::get()->getSslConfig());
+
+    qDebug()<< Q_FUNC_INFO << "url: " << url << " SSL:" <<IdentityManager::get()->getUniqueId() ;
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0) && !defined(QT_NO_BEARERMANAGEMENT)
     // HACK: Set network accessibility to work around QTBUG-80947.

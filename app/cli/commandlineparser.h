@@ -10,8 +10,10 @@ class GlobalCommandLineParser
 public:
     enum ParseResult {
         NormalStartRequested,
+        CloudRequested,
         StreamRequested,
         QuitRequested,
+        ExportCertRequested,
     };
 
     GlobalCommandLineParser();

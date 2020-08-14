@@ -164,6 +164,9 @@ ComputerManager::ComputerManager(QObject *parent)
     }
     settings.endArray();
 
+
+    m_PollingRef = 0;
+
     // To quit in a timely manner, we must block additional requests
     // after we receive the aboutToQuit() signal. This is neccessary
     // because NvHTTP uses aboutToQuit() to abort requests in progres
@@ -264,7 +267,7 @@ void ComputerManager::startPolling()
 
     StreamingPreferences prefs;
 
-    if (prefs.enableMdns) {
+    if (prefs.enableMdns && false) {
         // Start an MDNS query for GameStream hosts
         m_MdnsBrowser = new QMdnsEngine::Browser(&m_MdnsServer, "_nvstream._tcp.local.", &m_MdnsCache);
         connect(m_MdnsBrowser, &QMdnsEngine::Browser::serviceAdded,
@@ -420,6 +423,19 @@ void ComputerManager::deleteHost(NvComputer* computer)
     QThreadPool::globalInstance()->start(new DeferredHostDeletionTask(this, computer));
 }
 
+
+void ComputerManager::deleteAllHosts()
+{
+    QWriteLocker lock(&m_Lock);
+
+    // Destroy all NvComputer objects now that polling is halted
+    for (NvComputer* computer : m_KnownHosts) {
+        delete computer;
+    }
+    m_KnownHosts.clear();
+}
+
+
 void ComputerManager::renameHost(NvComputer* computer, QString name)
 {
     {
@@ -499,6 +515,13 @@ void ComputerManager::pairHost(NvComputer* computer, QString pin)
     // UI while waiting for pairing to complete
     PendingPairingTask* pairing = new PendingPairingTask(this, computer, pin);
     QThreadPool::globalInstance()->start(pairing);
+}
+
+void ComputerManager::addComputer(NvComputer *computer)
+{
+    qDebug() << "Add computer: "<< computer->uuid << " cert:" << computer->serverCert.toPem();
+    QWriteLocker lock(&m_Lock);
+    this->m_KnownHosts[computer->uuid] = computer;
 }
 
 class PendingQuitTask : public QObject, public QRunnable
@@ -647,6 +670,8 @@ private:
 
         // Perform initial serverinfo fetch over HTTP since we don't know which cert to use
         QString serverInfo = fetchServerInfo(http);
+        qInfo() << "ServerINFO: " << serverInfo;
+
         if (serverInfo.isEmpty() && !m_MdnsIpv6Address.isNull()) {
             // Retry using the global IPv6 address if the IPv4 or link-local IPv6 address fails
             http.setAddress(m_MdnsIpv6Address.toString());
@@ -662,10 +687,14 @@ private:
         // Check if we have a record of this host UUID to pull the pinned cert
         NvComputer* existingComputer;
         {
+            qDebug() << "Check if this computer exist: "<< newComputer->uuid;
             QReadLocker lock(&m_ComputerManager->m_Lock);
             existingComputer = m_ComputerManager->m_KnownHosts.value(newComputer->uuid);
             if (existingComputer != nullptr) {
+                qDebug() << ">>>>> This is a existing Computer: " << existingComputer->serverCert.toPem();
                 http.setServerCert(existingComputer->serverCert);
+            }else{
+                qDebug() << ">>>>> This is  NEW Computer: " << newComputer->uuid;
             }
         }
 

@@ -29,6 +29,17 @@ NvComputer::NvComputer(QSettings& settings)
     this->manualAddress = settings.value(SER_MANUALADDR).toString();
     this->serverCert = QSslCertificate(settings.value(SER_SRVCERT).toByteArray());
 
+    qDebug() << Q_FUNC_INFO
+             << "name:" << this->name
+             << "uuid:" << this->uuid
+             << "hascustomerName:"<< hasCustomName
+             << "macAddress:" << macAddress
+             << "localaddress:" << localAddress
+             << "remoteaddress:"<< remoteAddress
+             << "ipv6:" << ipv6Address
+             << "manualAdd:" << manualAddress
+             << "serverCert:"<< serverCert.toPem();
+
     int appCount = settings.beginReadArray(SER_APPLIST);
     for (int i = 0; i < appCount; i++) {
         settings.setArrayIndex(i);
@@ -49,6 +60,19 @@ NvComputer::NvComputer(QSettings& settings)
     this->serverCodecModeSupport = 0;
     this->pendingQuit = false;
     this->gpuModel = nullptr;
+}
+
+NvComputer::NvComputer(QString name, QString ip, QString uuid, QString cert)
+{
+    this->name = name;
+    this->uuid = uuid;
+    this->hasCustomName = false;
+    this->macAddress = QString("").toUtf8();
+    this->localAddress = ip;
+    this->remoteAddress = "";
+    this->ipv6Address = "";
+    this->manualAddress= ip;
+    this->serverCert = QSslCertificate(cert.toUtf8());
 }
 
 void NvComputer::serialize(QSettings& settings) const
@@ -76,6 +100,8 @@ void NvComputer::serialize(QSettings& settings) const
         settings.endArray();
     }
 }
+
+
 
 void NvComputer::sortAppList()
 {

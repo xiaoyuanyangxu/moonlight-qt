@@ -24,6 +24,7 @@ public:
     IdentityManager*
     get();
 
+    bool setCertificated(QString cert, QString key, QString id);
 private:
     IdentityManager();
 

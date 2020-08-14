@@ -193,7 +193,12 @@ GlobalCommandLineParser::ParseResult GlobalCommandLineParser::parse(const QStrin
                 return QuitRequested;
             } else if (action == "stream") {
                 return StreamRequested;
+            } else if (action =="export"){
+                return ExportCertRequested;
+            } else if (action =="cloud"){
+                return CloudRequested;
             }
+
         }
 
         parser.showError(QString("Invalid action"));
