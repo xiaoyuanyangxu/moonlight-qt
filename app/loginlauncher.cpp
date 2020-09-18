@@ -150,8 +150,7 @@ public:
                 m_State = StateGettingCreadentials;
 
                 GetCredentialTask* pTask = new GetCredentialTask(m_LoginComputerName,
-                                                     event.serverCert,
-                                                     event.sessionId);
+                                                                 event.sessionId);
 
                 q->connect(pTask, &GetCredentialTask::taskCompleted,
                         q, &LoginLauncher::onGetMyCredentialsFinished);

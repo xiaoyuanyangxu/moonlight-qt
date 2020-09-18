@@ -25,12 +25,11 @@ class LoginTask: public QObject, public QRunnable
 
 public:
 
-    explicit LoginTask(QString address,
+    explicit LoginTask(QString baseUrl,
               QSslCertificate serverCert,
               QString username,
               QString password)
-        : m_address(address),
-          m_serverCert(serverCert),
+        : m_baseUrl(baseUrl),
           m_userName(username),
           m_password(password)
     {
@@ -45,17 +44,14 @@ signals:
 private:
     void run()
     {
-        BackendAPI backend(m_address,
-                           "",
-                           m_serverCert);
+        BackendAPI backend(m_baseUrl,"");
         QString sessionId;
         bool ok = backend.login(m_userName, m_password, sessionId);
 
         emit taskCompleted(ok, sessionId);
 
     }
-    QString m_address;
-    QSslCertificate m_serverCert;
+    QString m_baseUrl;
     QString m_userName;
     QString m_password;
 };
@@ -65,11 +61,9 @@ class GetCredentialTask: public QObject, public QRunnable
     Q_OBJECT
 
 public:
-    GetCredentialTask(QString address,
-              QSslCertificate serverCert,
+    GetCredentialTask(QString baseUrl,
               QString sessionId)
-        : m_address(address),
-          m_serverCert(serverCert),
+        : m_baseUrl(baseUrl),
           m_sessionId(sessionId)
     {
 
@@ -90,9 +84,8 @@ private:
     void run()
     {
         qDebug() << Q_FUNC_INFO << "Run thread GetCredentialTask";
-        BackendAPI backend(m_address,
-                           m_sessionId,
-                           m_serverCert);
+        BackendAPI backend(m_baseUrl,
+                           m_sessionId);
         QString myId, myCert, myKey, myServerIP, myServerName, myServerUuid, myServerCert;
 
         bool ok = backend.getMyCredentials(myId,
@@ -107,8 +100,7 @@ private:
                            myServerName, myServerUuid, myServerCert);
 
     }
-    QString m_address;
-    QSslCertificate m_serverCert;
+    QString m_baseUrl;
     QString m_sessionId;
 };
 

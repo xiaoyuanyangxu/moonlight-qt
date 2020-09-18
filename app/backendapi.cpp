@@ -12,21 +12,18 @@
 #include <QNetworkProxy>
 #include <QEventLoop>
 #include <QJsonDocument>
+#include <QNetworkCookie>
 #include <backend/nvhttp.h>
 
 #define REQUEST_TIMEOUT_MS 5000
 
-BackendAPI::BackendAPI(QString address,
+BackendAPI::BackendAPI(QString baseUrl,
                        QString sessionId,
-                       QSslCertificate serverCert,
                        QObject *parent)
     : QObject(parent),
-    m_Address(address),
-    m_SessionId(sessionId),
-    m_ServerCert(serverCert)
+    m_SessionId(sessionId)
 {
-    m_BaseUrlHttps.setScheme("https");
-    m_BaseUrlHttps.setPort(443);
+    m_BaseUrl = baseUrl;
 
     // Never use a proxy server
     QNetworkProxy noProxy(QNetworkProxy::NoProxy);
@@ -48,35 +45,46 @@ bool BackendAPI::login(QString userName, QString password, QString &sessionId)
 {
     QString answer;
 
-    return loginMock(userName, password, sessionId);
+    //return loginMock(userName, password, sessionId);
 
-    // Check if we have a pinned cert for this host yet
-    if (!m_ServerCert.isNull())
-    {
-        try {
-            QString headerData = getBasicAuthHeader(userName,password);
-            QMap<QString,QString> headers;
-            headers["Authorization"] = headerData;
-            answer = openConnectionToString(m_BaseUrlHttps,
-                                                "login",
-                                                nullptr,
-                                                headers,
-                                                REQUEST_TIMEOUT_MS);
+    try {
+        QString postBody = QString("{\n\"username\": \"%1\",\n\"password\":\"%2\"\n}\n\n").arg(userName).arg(password);
+        QMap<QString,QString> headers;
+        QList<QNetworkCookie> cookies;
+        //headers["content-type"] = "application/json";
+        answer = openConnectionToString(m_BaseUrl,
+                                        "user/login",
+                                        nullptr,
+                                        headers,
+                                        REQUEST_TIMEOUT_MS,
+                                        true,
+                                        postBody.toUtf8(),
+                                        &cookies
+                                       );
 
-            qDebug() << Q_FUNC_INFO << "Ack:" << answer;
+        qDebug() << Q_FUNC_INFO << "Ack:" << answer;
+        sessionId = "";
 
-            QJsonDocument jsonDoc = QJsonDocument::fromJson(answer.toUtf8());
-            QJsonObject msgObj = jsonDoc.object();
-            if (msgObj["status"] == "ok")
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(answer.toUtf8());
+        QJsonObject msgObj = jsonDoc.object();
+
+        for (auto c : cookies)
+        {
+            if (c.name() == "access_token")
             {
-                sessionId = msgObj["session_id"].toString();
-                return true;
-            }else{
-                qWarning() << Q_FUNC_INFO << "Ack: status is not ok";
+                sessionId = c.name() + "=" + c.value();
+                qDebug() << Q_FUNC_INFO << "Cookie" << sessionId;
+                break;
             }
-        } catch (...) {
-            qWarning() << Q_FUNC_INFO << "Exception detected";
         }
+        if (sessionId != "")
+        {
+            return true;
+        }else{
+            return false;
+        }
+    } catch (...) {
+        qWarning() << Q_FUNC_INFO << "Exception detected";
     }
     return false;
 }
@@ -94,46 +102,49 @@ bool BackendAPI::getMyCredentials(QString &myId,
                                   QString &myServerUuid,
                                   QString &myServerCert)
 {
-    return getMyCredentialsMock(myId, myCert, myKey, myServerIP, myServerName, myServerUuid, myServerCert);
+    //return getMyCredentialsMock(myId, myCert, myKey, myServerIP, myServerName, myServerUuid, myServerCert);
 
     QString answer;
 
     qDebug() << Q_FUNC_INFO << "getMyCreadentials";
 
-    // Check if we have a pinned cert for this host yet
-    if (!m_ServerCert.isNull())
-    {
-        try {
-            QMap<QString,QString> headers;
-            headers["Cookie"] = "sessionid: " + m_SessionId;
-            answer = openConnectionToString(m_BaseUrlHttps,
-                                                "mycreadentials",
-                                                nullptr,
-                                                headers,
-                                                REQUEST_TIMEOUT_MS);
+    try {
+        QMap<QString,QString> headers;
 
-            qDebug() << Q_FUNC_INFO << "Ack:" << answer;
+        headers["Cookie"] = m_SessionId;
+        answer = openConnectionToString(m_BaseUrl,
+                                        "connectioninfo/myinfo",
+                                        nullptr,
+                                        headers,
+                                        REQUEST_TIMEOUT_MS,
+                                        false,
+                                        QByteArray(),
+                                        nullptr);
 
-            QJsonDocument jsonDoc = QJsonDocument::fromJson(answer.toUtf8());
-            QJsonObject msgObj = jsonDoc.object();
-            if (msgObj["status"] == "ok")
-            {
-                myId = msgObj["my_id"].toString();
-                myCert = msgObj["my_cert"].toString();
-                myKey = msgObj["my_key"].toString();
-                myServerIP = msgObj["server_ip"].toString();
-                myServerName = msgObj["server_name"].toString();
-                myServerUuid = msgObj["server_uuid"].toString();
-                myServerCert = msgObj["server_cert"].toString();
+        qDebug() << Q_FUNC_INFO << "Ack:" << answer;
 
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(answer.toUtf8());
+        QJsonObject msgObj = jsonDoc.object();
+        if (msgObj["status"] == "ok")
+        {
+            myId = msgObj["id"].toString();
+            myCert = msgObj["cert"].toString();
+            myCert = myCert.replace("\\n","\n");
+            myKey = msgObj["key"].toString();
+            myKey = myKey.replace("\\n","\n");
+            myServerIP = msgObj["serverIp"].toString();
+            myServerName = msgObj["serverName"].toString();
+            myServerUuid = msgObj["serverUuid"].toString();
+            myServerCert = msgObj["serverCert"].toString();
+            myServerCert = myServerCert.replace("\\n","\n");
 
-                return true;
-            }else{
-                qWarning() << Q_FUNC_INFO << "Ack: status is not ok";
-            }
-        } catch (...) {
-            qWarning() << Q_FUNC_INFO << "Exception detected";
+            qDebug() << Q_FUNC_INFO << "My CERT: " << myCert;
+            return true;
+        }else{
+            qWarning() << Q_FUNC_INFO << "Ack: status is not ok";
         }
+    } catch (...) {
+        qWarning() << Q_FUNC_INFO << "Exception detected";
     }
     return false;
 }
@@ -165,24 +176,16 @@ bool BackendAPI::getMyCredentialsMock(QString &myId,
      */
 
     try {
-        QMap<QString,QString> headers;
-        //headers["Cookie"] = "sessionid: " + m_SessionId;
-        answer = openConnectionToString(QUrl("https://google.com/"),
-                                            "",
-                                            nullptr,
-                                            headers,
-                                            REQUEST_TIMEOUT_MS);
-
-        if (m_SessionId == "i_am_cool") {
+        if (m_SessionId == "access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJMdWRpY28iLCJzdWIiOiI1ZjNmYjQ4ODNjMmIyZjRlZjBiMGM5NzMiLCJpYXQiOjE2MDAyNjQxNjYsImV4cCI6MTYzMTgwMDE2Nn0.-SOJk0C0quUTu3SfkZTUKe2kZLJqq5sW-02VDFwCP1g") {
             answer = QString("{"
                      "\"status\":\"ok\","
-                     "\"my_id\":\"%1\","
-                     "\"my_cert\":\"%2\","
-                     "\"my_key\":\"%3\","
-                     "\"server_ip\":\"192.168.1.48\","
-                     "\"server_name\":\"DESKTOP-Q4ML9GA\","
-                     "\"server_uuid\":\"D0CC273E-DDA8-532E-9F1E-83514117D963\","
-                     "\"server_cert\":\"-----BEGIN CERTIFICATE-----\nMIICvzCCAaegAwIBAgIBADANBgkqhkiG9w0BAQsFADAjMSEwHwYDVQQDDBhTdW5z\naGluZSBHYW1lc3RyZWFtIEhvc3QwHhcNMjAwNjI1MTMwMTIwWhcNNDAwNjIwMTMw\nMTIwWjAjMSEwHwYDVQQDDBhTdW5zaGluZSBHYW1lc3RyZWFtIEhvc3QwggEiMA0G\nCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC3JLGY36rm5jmAgpuaWGg8pUZQgFMo\nq5ZXeiJ7+0Pkgd9lV3/25FZlE8h1dBiu8YGeq4BHR1P3S/3hYwlnDWdLpMKK3j/T\nUom6zVtOm+9ct6I1YKk+8YZT2ShbV5WzesfTBE5mbLCmrPqPHNYxMN+PfW0DVifR\nkXRyfWtc5+8antpAbaLod059K6lDxxz1d7gqge/ji4OdOQklfHhPeljrdcfPztmT\nvjzi8he5l0wpxN7RVLLFEn7h2vbTWRDWLskafoL1XbSbob3I9k6ztgrC+ORq3fZg\nSOrbliBgzeVea83SIFjHdmKji/0LTWFGo5rmyv9PUzeTxjnUVHvpI1GhAgMBAAEw\nDQYJKoZIhvcNAQELBQADggEBAGtzwwF27klbPVRcjxttgf8Pp19q9VtATnNEFopm\nsNLR0wiKJ0+tmGaNWzxe2ad+nTPpuAPnYoCTysN7qsQupFQa5PCThYfN8vqzORSQ\nZHXSxX4YehRVd1h9bsNTyeGWonYIkRh86mS5u+C3rYT3Ucxz0rUj45m6p0CxEVBh\nk3gkBGQLa20ccyeFB06G8nm1O6ApkaBYhh8Op2FEqaiV49U+a0EYfyU02dbhfzCO\noPIbt+5Wkjq0oJ7ECyrtvALGw5b1wsq/ETy4HaZaWRBsUj64S/zoIOrW6E4w92Ho\nydAmZOs4oeGJ+KaotbwOsFrIFRDyctUAchg+j4sRSe7UD5k=\n-----END CERTIFICATE-----\n\""
+                     "\"id\":\"%1\","
+                     "\"cert\":\"%2\","
+                     "\"key\":\"%3\","
+                     "\"serverIp\":\"192.168.1.48\","
+                     "\"serverName\":\"DESKTOP-Q4ML9GA\","
+                     "\"serverUuid\":\"D0CC273E-DDA8-532E-9F1E-83514117D963\","
+                     "\"serverCert\":\"-----BEGIN CERTIFICATE-----\nMIICvzCCAaegAwIBAgIBADANBgkqhkiG9w0BAQsFADAjMSEwHwYDVQQDDBhTdW5z\naGluZSBHYW1lc3RyZWFtIEhvc3QwHhcNMjAwNjI1MTMwMTIwWhcNNDAwNjIwMTMw\nMTIwWjAjMSEwHwYDVQQDDBhTdW5zaGluZSBHYW1lc3RyZWFtIEhvc3QwggEiMA0G\nCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC3JLGY36rm5jmAgpuaWGg8pUZQgFMo\nq5ZXeiJ7+0Pkgd9lV3/25FZlE8h1dBiu8YGeq4BHR1P3S/3hYwlnDWdLpMKK3j/T\nUom6zVtOm+9ct6I1YKk+8YZT2ShbV5WzesfTBE5mbLCmrPqPHNYxMN+PfW0DVifR\nkXRyfWtc5+8antpAbaLod059K6lDxxz1d7gqge/ji4OdOQklfHhPeljrdcfPztmT\nvjzi8he5l0wpxN7RVLLFEn7h2vbTWRDWLskafoL1XbSbob3I9k6ztgrC+ORq3fZg\nSOrbliBgzeVea83SIFjHdmKji/0LTWFGo5rmyv9PUzeTxjnUVHvpI1GhAgMBAAEw\nDQYJKoZIhvcNAQELBQADggEBAGtzwwF27klbPVRcjxttgf8Pp19q9VtATnNEFopm\nsNLR0wiKJ0+tmGaNWzxe2ad+nTPpuAPnYoCTysN7qsQupFQa5PCThYfN8vqzORSQ\nZHXSxX4YehRVd1h9bsNTyeGWonYIkRh86mS5u+C3rYT3Ucxz0rUj45m6p0CxEVBh\nk3gkBGQLa20ccyeFB06G8nm1O6ApkaBYhh8Op2FEqaiV49U+a0EYfyU02dbhfzCO\noPIbt+5Wkjq0oJ7ECyrtvALGw5b1wsq/ETy4HaZaWRBsUj64S/zoIOrW6E4w92Ho\nydAmZOs4oeGJ+KaotbwOsFrIFRDyctUAchg+j4sRSe7UD5k=\n-----END CERTIFICATE-----\n\""
                      "}").arg(id).arg(cert).arg(key);
         }
 
@@ -193,14 +196,14 @@ bool BackendAPI::getMyCredentialsMock(QString &myId,
         qDebug() << Q_FUNC_INFO << msgObj.keys();
         if (msgObj["status"] == "ok")
         {
-            myId = msgObj["my_id"].toString();
-            myCert = msgObj["my_cert"].toString();
-            myKey = msgObj["my_key"].toString();
-            myServerIP = msgObj["server_ip"].toString();
+            myId = msgObj["id"].toString();
+            myCert = msgObj["cert"].toString();
+            myKey = msgObj["key"].toString();
+            myServerIP = msgObj["serverIp"].toString();
 
-            myServerName = msgObj["server_name"].toString();
-            myServerUuid = msgObj["server_uuid"].toString();
-            myServerCert = msgObj["server_cert"].toString();
+            myServerName = msgObj["serverName"].toString();
+            myServerUuid = msgObj["serverUuid"].toString();
+            myServerCert = msgObj["serverCert"].toString();
             return true;
         }else{
             qWarning() << Q_FUNC_INFO << "Ack: status is not ok";
@@ -218,33 +221,13 @@ bool BackendAPI::loginMock(QString userName, QString password, QString &sessionI
     qDebug() << Q_FUNC_INFO << "loginMock" << userName << " " << password;
 
     try {
-        QMap<QString,QString> headers;
-        answer = openConnectionToString(QUrl("https://google.com/"),
-                                            "",
-                                            nullptr,
-                                            headers,
-                                            REQUEST_TIMEOUT_MS);
-
-        if (userName == "xiaoyuan" && password == "holala") {
-            answer = "{"
-                     "\"status\":\"ok\","
-                     "\"session_id\":\"i_am_cool\""
-                     "}";
-        }
-
-
-
-        qDebug() << Q_FUNC_INFO << "Ack:" << answer;
-
-        QJsonDocument jsonDoc = QJsonDocument::fromJson(answer.toUtf8());
-        QJsonObject msgObj = jsonDoc.object();
-        if (msgObj["status"] == "ok")
-        {
-            sessionId = msgObj["session_id"].toString();
-            return true;
+        if (userName == "Xiao" && password == "mg2019") {
+            sessionId = "access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJMdWRpY28iLCJzdWIiOiI1ZjNmYjQ4ODNjMmIyZjRlZjBiMGM5NzMiLCJpYXQiOjE2MDAyNjQxNjYsImV4cCI6MTYzMTgwMDE2Nn0.-SOJk0C0quUTu3SfkZTUKe2kZLJqq5sW-02VDFwCP1g";
         }else{
-            qWarning() << Q_FUNC_INFO << "Ack: status is not ok";
+            sessionId = "";
+            return false;
         }
+        return true;
     } catch (...) {
         qWarning() << Q_FUNC_INFO << "Exception detected";
     }
@@ -255,36 +238,39 @@ QString BackendAPI::openConnectionToString(QUrl baseUrl,
                                            QString command,
                                            QString arguments,
                                            QMap<QString,QString> extraHeaders,
-                                           int timeoutMs)
+                                           int timeoutMs,
+                                           bool isAPost,
+                                           const QByteArray & postBody,
+                                           QList<QNetworkCookie> *cookies)
 {
     QNetworkReply* reply = openConnection(baseUrl, command, arguments,
-                                          extraHeaders, timeoutMs);
+                                          extraHeaders, timeoutMs,
+                                          isAPost,
+                                          postBody);
     QString ret;
 
     QTextStream stream(reply);
     stream.setCodec("UTF-8");
     ret = stream.readAll();
-    delete reply;
 
+   if (cookies != nullptr) {
+       QVariant cookieVar = reply->header(QNetworkRequest::SetCookieHeader);
+       if (cookieVar.isValid()) {
+           QList<QNetworkCookie> rawCookies = cookieVar.value<QList<QNetworkCookie> >();
+           for (QNetworkCookie c: rawCookies) {
+               qDebug() << "Cookie" << c;
+               cookies->push_back(c);
+           }
+       }
+   }
+
+    delete reply;
     return ret;
 }
 
 void BackendAPI::handleSslErrors(QNetworkReply *reply, const QList<QSslError> &errors)
 {
     bool ignoreErrors = true;
-
-    if (m_ServerCert.isNull()) {
-        // We should never make an HTTPS request without a cert
-        Q_ASSERT(!m_ServerCert.isNull());
-        return;
-    }
-
-    for (auto error : errors) {
-        if (m_ServerCert != error.certificate()) {
-            ignoreErrors = false;
-            break;
-        }
-    }
 
     if (ignoreErrors) {
         reply->ignoreSslErrors(errors);
@@ -295,18 +281,24 @@ QNetworkReply *BackendAPI::openConnection(QUrl baseUrl,
                                           QString command,
                                           QString arguments,
                                           QMap<QString,QString> extraHeaders,
-                                          int timeoutMs)
+                                          int timeoutMs,
+                                          bool isAPost,
+                                          const QByteArray & postBody)
 {
     // Build a URL for the request
     QUrl url(baseUrl);
     url.setPath("/" + command);
-    url.setQuery(((arguments != nullptr) ? (arguments) : ""));
-
-    QNetworkRequest request(url);
-
-    for (auto key: extraHeaders)
+    if (arguments != nullptr)
     {
-        request.setRawHeader(key.toLocal8Bit(), extraHeaders[key].toLocal8Bit());
+        url.setQuery(arguments );
+    }
+    QNetworkRequest request(url);
+    qDebug() << "REQUEST TO BACKEND:" << url <<  isAPost << postBody << extraHeaders ;
+
+    for (auto i = extraHeaders.begin(); i != extraHeaders.end(); ++i)
+    {
+        qDebug() << "SET RAW HEADER:" << i.key() << ":" << i.value();
+        request.setRawHeader(i.key().toLocal8Bit(), i.value().toLocal8Bit());
     }
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0) && !defined(QT_NO_BEARERMANAGEMENT)
@@ -320,8 +312,14 @@ QNetworkReply *BackendAPI::openConnection(QUrl baseUrl,
     QT_WARNING_POP
 #endif
 
-    QNetworkReply* reply = m_Nam.get(request);
-
+    QNetworkReply* reply = 0;
+    if (!isAPost)
+    {
+        reply = m_Nam.get(request);
+    }else{
+        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        reply = m_Nam.post(request, postBody);
+    }
     // Run the request with a timeout if requested
     QEventLoop loop;
     connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));

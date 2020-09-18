@@ -531,7 +531,7 @@ int main(int argc, char *argv[])
     case GlobalCommandLineParser::CloudRequested:
         {
             initialView = "qrc:/gui/CliLoginView.qml";
-            auto launcher   = new CliLoginLauncher::LoginLauncher("google.com",
+            auto launcher   = new CliLoginLauncher::LoginLauncher("http://10.147.17.252:5000/", //"http://81.47.200.2:5000/",
                                                                   &app);
             engine.rootContext()->setContextProperty("launcher", launcher);
             notPolling = true;

@@ -3,6 +3,7 @@
 
 
 #include <QNetworkAccessManager>
+#include <QNetworkCookie>
 #include <QObject>
 #include <QSslCertificate>
 
@@ -10,9 +11,8 @@ class BackendAPI : public QObject
 {
     Q_OBJECT
 public:
-    explicit BackendAPI(QString address,
+    explicit BackendAPI(QString baseUrl,
                         QString sessionId,
-                        QSslCertificate serverCert,
                         QObject *parent = nullptr);
 
     static
@@ -35,9 +35,9 @@ public:
     openConnectionToString(QUrl baseUrl,
                            QString command,
                            QString arguments, QMap<QString, QString> extraHeaders,
-                           int timeoutMs);
+                           int timeoutMs, bool isAPost, const QByteArray &postBody, QList<QNetworkCookie> *cookies);
 
-    QUrl m_BaseUrlHttps;
+    QUrl m_BaseUrl;
 
 private:
     bool getMyCredentialsMock(QString & myId,
@@ -56,12 +56,10 @@ private:
     QNetworkReply *openConnection(QUrl baseUrl,
                    QString command,
                    QString arguments, QMap<QString, QString> extraHeaders,
-                   int timeoutMs);
+                   int timeoutMs, bool isAPost, const QByteArray &postBody);
 
-    QString m_Address;
     QString m_SessionId;
     QNetworkAccessManager m_Nam;
-    QSslCertificate m_ServerCert;
 
 };
 
