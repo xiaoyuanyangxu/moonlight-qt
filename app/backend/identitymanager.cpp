@@ -107,6 +107,11 @@ bool IdentityManager::setCertificated(QString cert, QString key, QString id)
     m_CachedPrivateKey = key.toUtf8();
     m_CachedUniqueId = id;
 
+    m_CachedSslCert.clear();
+    m_CachedSslKey.clear();
+
+    qDebug() << "New Certificate SET:"<< m_CachedPemCert << " KEY: " << m_CachedPrivateKey << " ID: " << m_CachedUniqueId;
+
     if (getSslCertificate().isNull()){
         qWarning() << "Certificate is unreadable";
         return false;
@@ -122,8 +127,8 @@ IdentityManager::IdentityManager()
 {
     QSettings settings;
 
-    m_CachedPemCert = settings.value(SER_CERT).toByteArray();
-    m_CachedPrivateKey = settings.value(SER_KEY).toByteArray();
+    //m_CachedPemCert = settings.value(SER_CERT).toByteArray();
+    //m_CachedPrivateKey = settings.value(SER_KEY).toByteArray();
 
     if (m_CachedPemCert.isEmpty() || m_CachedPrivateKey.isEmpty()) {
         qInfo() << "No existing credentials found";
@@ -151,6 +156,7 @@ QSslCertificate
 IdentityManager::getSslCertificate()
 {
     if (m_CachedSslCert.isNull()) {
+        qDebug() << "Current SSL CERT: " << m_CachedPemCert;
         m_CachedSslCert = QSslCertificate(m_CachedPemCert);
     }
     return m_CachedSslCert;
@@ -160,6 +166,9 @@ QSslKey
 IdentityManager::getSslKey()
 {
     if (m_CachedSslKey.isNull()) {
+
+        qDebug() << "Current SSL Private Key: " << m_CachedPrivateKey;
+
         BIO* bio = BIO_new_mem_buf(m_CachedPrivateKey.data(), -1);
         THROW_BAD_ALLOC_IF_NULL(bio);
 
