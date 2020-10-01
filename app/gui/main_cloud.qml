@@ -19,8 +19,11 @@ ApplicationWindow {
     height: 600
 
     background: Rectangle {
-            color: "#000000"
-        }
+        id: background
+        anchors.fill: parent;
+        color: "#000000"
+        Image { source: "qrc:/res/street_fighter.jpeg"; fillMode: Image.PreserveAspectCrop; anchors.fill: parent;  opacity: 0.4 }
+    }
 
     visibility: (SystemProperties.hasWindowManager && StreamingPreferences.startWindowed) ? "Windowed" : "Maximized"
 
@@ -178,11 +181,12 @@ ApplicationWindow {
         id: toolBar
         height: 45
 
-        anchors.topMargin: 5
-        anchors.bottomMargin: 5
+        anchors.topMargin: 8
+        anchors.bottomMargin: 8
 
         background: Rectangle {
-                color: "#555555"
+                color: "#ffffff"
+                opacity: 0.2
             }
 
         Label {

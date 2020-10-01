@@ -151,9 +151,10 @@ Item {
             id: login
             placeholderText: "Username"
             text: launcher.getLastUsername()
-
+            color: "white"
             enabled: loginRequired && !contactingWithBackend
             visible: loginRequired
+            anchors.horizontalCenter: parent.horizontalCenter
         }
 
         TextField {
@@ -162,6 +163,7 @@ Item {
             echoMode: TextInput.Password
             enabled: loginRequired && !contactingWithBackend
             visible: loginRequired
+            anchors.horizontalCenter: parent.horizontalCenter
         }
 
         Button {
@@ -170,6 +172,7 @@ Item {
             enabled: loginRequired && login.text.length > 0 && password.text.length >0 && !contactingWithBackend
             visible: loginRequired
             onClicked: performLogin(login.text, password.text)
+            anchors.horizontalCenter: parent.horizontalCenter
         }
 
 
@@ -177,6 +180,7 @@ Item {
             id: stageSpinner
             enabled: contactingWithBackend
             visible: contactingWithBackend
+            anchors.horizontalCenter: parent.horizontalCenter
         }
 
         Label {
@@ -184,7 +188,7 @@ Item {
             height: stageSpinner.height
             font.pointSize: 12
             verticalAlignment: Text.AlignVCenter
-
+            anchors.horizontalCenter: parent.horizontalCenter
             wrapMode: Text.Wrap
         }
     }
