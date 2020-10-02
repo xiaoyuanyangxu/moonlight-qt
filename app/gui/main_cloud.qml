@@ -22,7 +22,56 @@ ApplicationWindow {
         id: background
         anchors.fill: parent;
         color: "#000000"
-        Image { source: "qrc:/res/street_fighter.jpeg"; fillMode: Image.PreserveAspectCrop; anchors.fill: parent;  opacity: 0.4 }
+
+        Image {
+            id: backgroudImage
+            source: "qrc:/res/street_fighter_t.jpeg";
+            fillMode: Image.PreserveAspectCrop;
+            anchors.fill: parent;
+            opacity: 0.3
+        }
+        Image {
+            id: logoImage
+            source: "qrc:/res/logo.png";
+            fillMode: Image.PreserveAspectFit; clip:true;
+            //anchors.fill: parent;
+            anchors.verticalCenter: parent.verticalCenter
+            x: parent.width * 0.1
+            height: parent.height * 0.65;
+            opacity: 1
+        }
+
+        NumberAnimation {
+            id: animateLogoOpacity
+            target: logoImage
+            properties: "opacity"
+            from: 0.1
+            to: 1
+            duration: 3000
+            loops: Animation.Infinite
+            easing {type: Easing.InOutBack; }
+       }
+
+        NumberAnimation {
+            id: animateOpacity
+            target: backgroudImage
+            properties: "opacity"
+            from: 0.3
+            to: 0.
+            duration: 1000
+            //loops: Animation.Infinite
+            easing {type: Easing.OutQuad; }
+       }
+        NumberAnimation {
+            id: animateOpacityUp
+            target: backgroudImage
+            properties: "opacity"
+            from: 0.0
+            to: 0.3
+            duration: 1000
+            //loops: Animation.Infinite
+            easing {type: Easing.InQuint; }
+       }
     }
 
     visibility: (SystemProperties.hasWindowManager && StreamingPreferences.startWindowed) ? "Windowed" : "Maximized"
@@ -35,6 +84,9 @@ ApplicationWindow {
 
         onCurrentItemChanged: {
             // Ensure focus travels to the next view when going back
+            //background.opacity = 0.4
+            animateOpacityUp.start()
+            animateLogoOpacity.start()
             if (currentItem) {
                 currentItem.forceActiveFocus()
             }
@@ -187,7 +239,7 @@ ApplicationWindow {
         background: Rectangle {
                 color: "#ffffff"
                 opacity: 0.2
-            }
+        }
 
         Label {
             id: titleLabel
@@ -226,8 +278,9 @@ ApplicationWindow {
             NavigableToolButton {
                 visible: stackView.depth > 1
                 id: loggoutButton
+                opacity: 1.0
 
-                iconSource:  "qrc:/res/logout.png"
+                iconSource:  "qrc:/res/logout4.png" //"qrc:/res/logout.png"
 
                 onClicked: {
                     toolBar.visible = false

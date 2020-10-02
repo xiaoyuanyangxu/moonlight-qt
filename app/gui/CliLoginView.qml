@@ -33,7 +33,7 @@ Item {
     function onSearchingComputerDone(ok, data) {
         contactingWithBackend = false
         if (ok) {
-            computerName = dataw
+            computerName = data
         }else{
             stageLabel.text = "Error in pairing with the computer: " +data
         }
@@ -54,6 +54,7 @@ Item {
         }else{
             stageLabel.text = "Error in pairing with the computer..."
             loginRequired = true
+            animateOpacityUp.start()
         }
     }
 
@@ -67,14 +68,24 @@ Item {
             myServerIp = ip
             loginRequired = false
 
-            launcher.seekComputer(ComputerManager,
+            if (myId.length == 0 || myCred.length == 0 ||
+                myKey.length == 0 || myServerIp.length == 0)
+            {
+                stageLabel.text = "No server is available. Try again!";
+                loginRequired = true
+                animateOpacityUp.start()
+
+            }else{
+                launcher.seekComputer(ComputerManager,
                                   myId,
                                   myCred,
                                   myKey,
                                   myServerIp, name, uuid, cert)
+            }
         }else{
             stageLabel.text = "Error in getting your creadentials. Login required";
             loginRequired = true
+            animateOpacityUp.start()
         }
     }
 
@@ -89,14 +100,16 @@ Item {
 
     function onLogginDone(ok, id) {
         contactingWithBackend = false
+
         if (ok) {
             stageLabel.text = "Loggin successed";
             loginRequired = false
             sessionId = id
             launcher.getMyCredentials(sessionId)
         }else{
-            stageLabel.text = "Loggin failed: " + id;
+            stageLabel.text = "Loggin failed!"
             loginRequired = true
+            animateOpacityUp.start()
         }
     }
 
@@ -171,7 +184,10 @@ Item {
             text: "Login >"
             enabled: loginRequired && login.text.length > 0 && password.text.length >0 && !contactingWithBackend
             visible: loginRequired
-            onClicked: performLogin(login.text, password.text)
+            onClicked: {
+                animateOpacity.start()
+                performLogin(login.text, password.text)
+            }
             anchors.horizontalCenter: parent.horizontalCenter
         }
 
