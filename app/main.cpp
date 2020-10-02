@@ -246,9 +246,9 @@ int main(int argc, char *argv[])
     // Set these here to allow us to use the default QSettings constructor.
     // These also ensure that our cache directory is named correctly. As such,
     // it is critical that these be called before Path::initialize().
-    QCoreApplication::setOrganizationName("Moonlight Game Streaming Project");
-    QCoreApplication::setOrganizationDomain("moonlight-stream.com");
-    QCoreApplication::setApplicationName("Moonlight");
+    QCoreApplication::setOrganizationName("Ludico Edge Streaming Project");
+    QCoreApplication::setOrganizationDomain("");
+    QCoreApplication::setApplicationName("Ludico Edge");
 
     if (QFile(QDir::currentPath() + "/portable.dat").exists()) {
         qInfo() << "Running in portable mode from:" << QDir::currentPath();
@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
 #ifdef USE_CUSTOM_LOGGER
 #ifdef LOG_TO_FILE
     QDir tempDir(Path::getLogDir());
-    s_LoggerFile = new QFile(tempDir.filePath(QString("Moonlight-%1.log").arg(QDateTime::currentSecsSinceEpoch())));
+    s_LoggerFile = new QFile(tempDir.filePath(QString("LudicoEdge-%1.log").arg(QDateTime::currentSecsSinceEpoch())));
     if (s_LoggerFile->open(QIODevice::WriteOnly)) {
         qInfo() << "Redirecting log output to " << s_LoggerFile->fileName();
         s_LoggerStream.setDevice(s_LoggerFile);
@@ -456,7 +456,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    app.setWindowIcon(QIcon(":/res/moonlight.svg"));
+    app.setWindowIcon(QIcon(":/res/ludico_edge_logo.svg"));
 
     // Register our C++ types for QML
     qmlRegisterType<ComputerModel>("ComputerModel", 1, 0, "ComputerModel");
@@ -524,10 +524,11 @@ int main(int argc, char *argv[])
     GlobalCommandLineParser parser;
     switch (parser.parse(app.arguments())) {
     case GlobalCommandLineParser::NormalStartRequested:
-        {
+        /*{
             initialView = "qrc:/gui/PcView.qml";
             break;
-        }
+        }*/
+
     case GlobalCommandLineParser::CloudRequested:
         {
             initialView = "qrc:/gui/CliLoginView.qml";
@@ -572,9 +573,9 @@ int main(int argc, char *argv[])
         }
     }
 
-    qDebug() << "ID:" << IdentityManager::get()->getUniqueId();
-    qDebug() << "Cert:" << IdentityManager::get()->getCertificate();
-    qDebug() << "Key:" << IdentityManager::get()->getPrivateKey();
+    //qDebug() << "ID:" << IdentityManager::get()->getUniqueId();
+    //qDebug() << "Cert:" << IdentityManager::get()->getCertificate();
+    //qDebug() << "Key:" << IdentityManager::get()->getPrivateKey();
 
     engine.rootContext()->setContextProperty("initialView", initialView);
     engine.rootContext()->setContextProperty("notPolling", notPolling);
@@ -582,6 +583,25 @@ int main(int argc, char *argv[])
     // Load the main.qml file
     if (cloudView)
     {
+        StreamingPreferences* preferences = new StreamingPreferences(&app);
+        preferences->videoCodecConfig = StreamingPreferences::VCC_AUTO;
+        preferences->videoDecoderSelection = StreamingPreferences::VDS_AUTO;
+        preferences->unsupportedFps = false;
+        preferences->enableMdns = false;
+        preferences->quitAppAfter = false;
+        preferences->playAudioOnHost = false;
+        preferences->gameOptimizations = false;
+        preferences->gamepadMouse = false;
+        preferences->absoluteTouchMode = false;
+        preferences->absoluteMouseMode = false;
+        preferences->multiController = false;
+        preferences->enableVsync = true;
+        preferences->framePacing = false;
+        preferences->audioConfig = StreamingPreferences::AC_STEREO;
+        preferences->connectionWarnings = false;
+        preferences->richPresence = false;
+        preferences->save();
+        delete  preferences;
         engine.load(QUrl("qrc:/gui/main_cloud.qml"));
     }else{
         engine.load(QUrl("qrc:/gui/main.qml"));

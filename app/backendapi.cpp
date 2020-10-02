@@ -141,7 +141,6 @@ bool BackendAPI::getMyCredentials(QString &myId,
             myServerCert = myServerCert.replace("\\n","\n");
             myServerCert = myServerCert.replace("\\\\","\\");
 
-            qDebug() << Q_FUNC_INFO << ">>>>>>>> My CERT: " << myCert << "My Key:" << myKey << "Server Cert:" << myServerCert;
             return true;
         }else{
             qWarning() << Q_FUNC_INFO << "Ack: status is not ok";

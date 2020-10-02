@@ -135,6 +135,7 @@ Item {
 
     StackView.onActivated: {
 
+
         SdlGamepadKeyNavigation.enable()
         if (!launcher.isExecuted()) {
             toolBar.visible = false
@@ -181,7 +182,10 @@ Item {
 
         Button {
             id: proccessButton
-            text: "Login >"
+
+            text: " Login"
+            icon.color: "transparent"
+            icon.source: "qrc:/res/login.svg"
             enabled: loginRequired && login.text.length > 0 && password.text.length >0 && !contactingWithBackend
             visible: loginRequired
             onClicked: {

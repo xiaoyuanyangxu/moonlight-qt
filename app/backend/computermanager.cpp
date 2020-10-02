@@ -117,6 +117,7 @@ private:
                     (m_Computer->appList.isEmpty() || pollsSinceLastAppListFetch >= POLLS_PER_APPLIST_FETCH)) {
                 // Notify prior to the app list poll since it may take a while, and we don't
                 // want to delay onlining of a machine, especially if we already have a cached list.
+
                 if (stateChanged) {
                     emit computerStateChanged(m_Computer);
                     stateChanged = false;

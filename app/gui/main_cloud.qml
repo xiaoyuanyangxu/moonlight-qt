@@ -14,7 +14,6 @@ ApplicationWindow {
     property bool pollingActive: false
 
     id: window
-    visible: true
     width: 1280
     height: 600
 
@@ -36,7 +35,7 @@ ApplicationWindow {
             fillMode: Image.PreserveAspectFit; clip:true;
             //anchors.fill: parent;
             anchors.verticalCenter: parent.verticalCenter
-            x: parent.width * 0.1
+            x: parent.width * 0.7
             height: parent.height * 0.65;
             opacity: 1
         }
@@ -233,8 +232,8 @@ ApplicationWindow {
         id: toolBar
         height: 45
 
-        anchors.topMargin: 8
-        anchors.bottomMargin: 8
+        anchors.topMargin: 5
+        anchors.bottomMargin: 5
 
         background: Rectangle {
                 color: "#ffffff"
@@ -253,10 +252,45 @@ ApplicationWindow {
         }
 
         RowLayout {
-            spacing: 20
-            anchors.leftMargin: 10
-            anchors.rightMargin: 10
+            spacing: 5
+            anchors.leftMargin: 5
+            anchors.rightMargin: 5
             anchors.fill: parent
+
+            NavigableToolButton {
+                // Only make the button visible if the user has navigated somewhere.
+                visible: stackView.depth > 1 && stackView.currentItem.objectName === "SettingsCloud"
+                iconSource: "qrc:/res/arrow_left.svg"
+                onClicked: stackView.pop()
+                Keys.onDownPressed: {
+                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                }
+            }
+
+            NavigableToolButton {
+                id: settingsButton
+
+                visible: stackView.depth > 1 && stackView.currentItem.objectName !== "SettingsCloud"
+
+                iconSource:  "qrc:/res/settings.svg"
+
+                onClicked: navigateTo("qrc:/gui/SettingsViewCloud.qml", "SettingsCloud")
+
+                Keys.onDownPressed: {
+                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                }
+
+                Shortcut {
+                    id: settingsShortcut
+                    sequence: StandardKey.Preferences
+                    onActivated: settingsButton.clicked()
+                }
+
+                ToolTip.delay: 1000
+                ToolTip.timeout: 3000
+                ToolTip.visible: hovered
+                ToolTip.text: "Settings" + (settingsShortcut.nativeText ? (" ("+settingsShortcut.nativeText+")") : "")
+            }
 
 
             // This label will appear when the window gets too small and
@@ -276,11 +310,11 @@ ApplicationWindow {
             }
 
             NavigableToolButton {
-                visible: stackView.depth > 1
+                visible: stackView.depth > 1  && stackView.currentItem.objectName !== "Settings"
                 id: loggoutButton
                 opacity: 1.0
 
-                iconSource:  "qrc:/res/logout4.png" //"qrc:/res/logout.png"
+                iconSource:  "qrc:/res/logout.svg"
 
                 onClicked: {
                     toolBar.visible = false

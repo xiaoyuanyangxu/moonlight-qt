@@ -359,7 +359,19 @@ void LoginLauncher::onComputerUpdated(NvComputer *computer)
         if (computer == i) break;
 
     }
-
+    if (computer->appList.size() > 1)
+    {
+        for(int i=0; i<computer->appList.size() ; i++)
+        {
+            if (computer->appList[i].name == "Steam BigPicture")
+            {
+                computer->appList.remove(i);
+                break;
+            }else{
+                qDebug() << Q_FUNC_INFO << "APP: "<< computer->appList[i].name;
+            }
+        }
+    }
     Q_D(LoginLauncher);
     Event event(Event::ComputerUpdated);
     event.computer = computer;

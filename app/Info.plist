@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleExecutable</key>
-	<string>Moonlight</string>
+        <string>LudicoEdge</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Stream games from your NVIDIA GameStream-enabled PC</string>
+        <string>LudicoEdge Stream for NVIDIA GameStream-enabled PC</string>
 	<key>CFBundleIconFile</key>
-	<string>moonlight</string>
+        <string>ludico_edge_logo</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.moonlight-stream.Moonlight</string>
+        <string>com.ludico_edge.LudicoEdge</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>CFBundlePackageType</key>
@@ -27,6 +27,6 @@
 	<key>CFBundleShortVersionString</key>
 	<string>VERSION</string>
 	<key>CFBundleDisplayName</key>
-	<string>Moonlight</string>
+        <string>LudicoEdge</string>
 </dict>
 </plist>

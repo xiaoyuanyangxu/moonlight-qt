@@ -1081,7 +1081,7 @@ void Session::exec(int displayOriginX, int displayOriginY)
 
     m_InputHandler->setWindow(m_Window);
 
-    QSvgRenderer svgIconRenderer(QString(":/res/moonlight.svg"));
+    QSvgRenderer svgIconRenderer(QString(":/res/ludico_edge_logo.svg"));
     QImage svgImage(ICON_SIZE, ICON_SIZE, QImage::Format_RGBA8888);
     svgImage.fill(0);
 
