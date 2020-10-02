@@ -35,7 +35,9 @@ Item {
         if (ok) {
             computerName = data
         }else{
-            stageLabel.text = "Error in pairing with the computer: " +data
+            stageLabel.text = "Error in pairing with the computer..."
+            loginRequired = true
+            animateOpacityUp.start()
         }
     }
 
@@ -61,7 +63,7 @@ Item {
     function onMyCredentialsDone(ok, id, cred, key, ip, name, uuid, cert) {
         contactingWithBackend = false
         if (ok) {
-            stageLabel.text = "We got your credentials" + ip;
+            stageLabel.text = "We got your credentials";
             myId = id
             myCred = cred
             myKey = key

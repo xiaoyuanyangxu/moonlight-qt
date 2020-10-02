@@ -430,9 +430,11 @@ void ComputerManager::deleteAllHosts()
     QWriteLocker lock(&m_Lock);
 
     // Destroy all NvComputer objects now that polling is halted
-    for (NvComputer* computer : m_KnownHosts) {
-        delete computer;
-    }
+
+    // Following code is disables because couse app failures. It may create memoery leaks.
+    //for (NvComputer* computer : m_KnownHosts) {
+    //    delete computer;
+    //}
     m_KnownHosts.clear();
 }
 
@@ -651,6 +653,7 @@ private:
                 }
                 else {
                     // Rethrow other errors
+                    qWarning() << "Rethrow other errors";
                     throw e;
                 }
             }
