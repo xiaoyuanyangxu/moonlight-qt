@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?define ShortName = "LudicoEdge" ?>
+<?define FullName = "LudicoEdgeStreaming Client" ?>
+
+<?define ShortcutName = "$(var.ShortName)" ?>
+<?define ShortcutDesc = "LudicoEdge from your NVIDIA GameStream-enabled PC" ?>
+<?define InstallFolder = "LudicoEdgeStreaming" ?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:fire="http://schemas.microsoft.com/wix/FirewallExtension"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+
+  <Product Id="*"
+           Name="$(var.FullName)"
+           Language="1033"
+           Version="!(bind.fileVersion.LudicoEdgeExe)"
+           Manufacturer="LudicoEdge Streaming Project"
+           UpgradeCode="2a169d2b-af0c-4a5c-b488-32e4ed383481">
+
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." Schedule="afterInstallInitialize" />
+    <MediaTemplate CompressionLevel="high" EmbedCab="yes" />
+
+    <?if $(var.Platform) = x64 ?>
+      <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
+    <?else ?>
+      <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+    <?endif ?>
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="DesktopFolder" />
+      <Directory Id="$(var.PlatformProgramFilesFolder)">
+        <Directory Id="INSTALLFOLDER" Name="$(var.InstallFolder)" />
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="$(var.InstallFolder)" />
+      </Directory>
+    </Directory>
+
+    <Property Id="APPDATAFOLDER">%LOCALAPPDATA%\LudicoEdge Streaming Project</Property>
+
+    <!-- There's no way to delete a registry key on uninstall but not major upgrade, so
+        we have to roll our own deletion via custom action -->
+    <CustomAction Id="DeleteRegistryKey"
+                  Directory="$(var.PlatformProgramFilesFolder)"
+                  ExeCommand="reg.exe delete &quot;HKCU\Software\LudicoEdge Streaming Project&quot; /f"
+                  Execute="deferred"
+                  Return="ignore"
+                  Impersonate="yes"/>
+    <InstallExecuteSequence>
+      <Custom Action="DeleteRegistryKey" Before="InstallFinalize">Installed AND REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
+    </InstallExecuteSequence>
+
+    <Component Id="LudicoEdgeShortcuts" Guid="*" Directory="INSTALLFOLDER">
+      <Shortcut Id="StartMenuShortcut" 
+                Name="$(var.ShortcutName)"
+                Description="$(var.ShortcutDesc)"
+                Target="[#LudicoEdgeExe]"
+                Directory="ApplicationProgramsFolder"
+                WorkingDirectory="INSTALLFOLDER" />
+      <RemoveFolder Id="CleanupStartMenuShortcut" Directory="ApplicationProgramsFolder" On="uninstall" />
+      <util:RemoveFolderEx Id="CleanupAppDataFolder" On="uninstall" Property="APPDATAFOLDER" />
+      <RegistryValue Root="HKCU" Key="Software\LudicoEdge Streaming Project" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="LudicoEdgeDesktopShortcut" Guid="*" Directory="INSTALLFOLDER">
+      <Shortcut Id="DesktopShortcut"
+                Name="$(var.ShortcutName)"
+                Description="$(var.ShortcutDesc)"
+                Target="[#LudicoEdgeExe]"
+                Directory="DesktopFolder"
+                WorkingDirectory="INSTALLFOLDER" />
+      <RemoveFolder Id="CleanupDesktopShortcut" Directory="DesktopFolder" On="uninstall" />
+      <RegistryValue Root="HKCU"
+                     Key="Software\LudicoEdge Streaming Project"
+                     Name="DesktopShortcutInstalled"
+                     Type="integer"
+                     Value="1"
+                     KeyPath="yes" />
+      <Condition>ADDDESKTOPSHORTCUT=1</Condition>
+    </Component>
+
+    <!-- Persist desktop shortcut's installed state to let Bundle.wxs know if
+         the desktop shortcut should installed by default when upgrading the
+         product -->
+    <Component Id="LudicoEdgeDesktopShortcutState" Guid="*" Directory="INSTALLFOLDER">
+      <RegistryValue Root="HKCU"
+                     Key="Software\LudicoEdge Streaming Project"
+                     Name="DesktopShortcutInstallState"
+                     Type="integer"
+                     Value="[ADDDESKTOPSHORTCUT]"
+                     KeyPath="yes" />
+    </Component>
+
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="LudicoEdge" Guid="*">
+        <File Id="LudicoEdgeExe" KeyPath="yes" Checksum="yes" Source="$(var.SourceDir)\LudicoEdge.exe">
+          <fire:FirewallException Id="LudicoEdgeFirewallException"
+                                  Scope="any"
+                                  Name="$(var.FullName)" />
+        </File>
+      </Component>
+    </DirectoryRef>
+
+    <Feature Id="ProductFeature" Title="LudicEdge" Level="1" ConfigurableDirectory="INSTALLFOLDER">
+      <ComponentRef Id="LudicoEdge" />
+      <ComponentRef Id="LudicoEdgeShortcuts" />
+      <ComponentRef Id="LudicoEdgeDesktopShortcutState" />
+      <ComponentRef Id="LudicoEdgeDesktopShortcut" />
+      <ComponentGroupRef Id="MoonlightDependencies" />
+    </Feature>
+  </Product>
+</Wix>
