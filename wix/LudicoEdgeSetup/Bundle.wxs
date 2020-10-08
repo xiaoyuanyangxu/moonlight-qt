@@ -7,7 +7,7 @@
   <Bundle Name="LudicoEdge Streaming Client"
           Version="!(bind.PackageVersion.LudicoEdge)"
           Manufacturer="LudicoEdge Streaming Project"
-          UpgradeCode="466fa35d-4be4-40ef-9ce5-afadc3b63bc5"
+          UpgradeCode="e93d7ad4-8d33-4d1c-b32f-41d5e87eb3c9"
           DisableModify="yes"
           IconSourceFile="..\..\app\ludico_edge_logo.ico">
 
