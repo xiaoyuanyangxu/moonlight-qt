@@ -48,12 +48,12 @@ bool BackendAPI::login(QString userName, QString password, QString &sessionId)
     //return loginMock(userName, password, sessionId);
 
     try {
-        QString postBody = QString("{\n\"username\": \"%1\",\n\"password\":\"%2\"\n}\n\n").arg(userName).arg(password);
+        QString postBody = QString("{\n\"email\": \"%1\",\n\"password\":\"%2\"\n}\n\n").arg(userName).arg(password);
         QMap<QString,QString> headers;
         QList<QNetworkCookie> cookies;
         //headers["content-type"] = "application/json";
         answer = openConnectionToString(m_BaseUrl,
-                                        "user/login",
+                                        "api/v1/auth/login",
                                         nullptr,
                                         headers,
                                         REQUEST_TIMEOUT_MS,
@@ -113,7 +113,7 @@ bool BackendAPI::getMyCredentials(QString &myId,
 
         headers["Cookie"] = m_SessionId;
         answer = openConnectionToString(m_BaseUrl,
-                                        "connectioninfo/myinfo",
+                                        "api/v1/connections/myinfo",
                                         nullptr,
                                         headers,
                                         REQUEST_TIMEOUT_MS,

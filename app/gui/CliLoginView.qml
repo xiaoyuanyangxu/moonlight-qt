@@ -160,22 +160,28 @@ Item {
     }
 
     Column {
+        id: contentColumn
         anchors.centerIn: parent
         spacing: 5
 
         TextField {
             id: login
-            placeholderText: "Username"
+            placeholderText: "Email"
+            width: login.font.pixelSize*17
             text: launcher.getLastUsername()
             color: "white"
             enabled: loginRequired && !contactingWithBackend
             visible: loginRequired
+            horizontalAlignment: TextInput.AlignHCenter
+            validator: RegExpValidator { regExp:/\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/ }
             anchors.horizontalCenter: parent.horizontalCenter
         }
 
         TextField {
             id: password
             placeholderText: "Password"
+            width: login.font.pixelSize*17
+            horizontalAlignment: TextInput.AlignHCenter
             echoMode: TextInput.Password
             enabled: loginRequired && !contactingWithBackend
             visible: loginRequired
