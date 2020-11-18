@@ -2,6 +2,7 @@
 #include "ffmpeg.h"
 #include "streaming/streamutils.h"
 #include "streaming/session.h"
+#include "statssingleton.h"
 
 #include <h264_stream.h>
 
@@ -824,6 +825,14 @@ int FFmpegVideoDecoder::submitDecodeUnit(PDECODE_UNIT du)
 
             stringifyVideoStats(lastTwoWndStats, Session::get()->getOverlayManager().getOverlayText(Overlay::OverlayDebug));
             Session::get()->getOverlayManager().setOverlayTextUpdated(Overlay::OverlayDebug);
+        }
+        if (StatsSingleton::getInstance()->intereded())
+        {
+            VIDEO_STATS lastTwoWndStats = {};
+            addVideoStats(m_LastWndVideoStats, lastTwoWndStats);
+            addVideoStats(m_ActiveWndVideoStats, lastTwoWndStats);
+
+            StatsSingleton::getInstance()->logStats(lastTwoWndStats);
         }
 
         // Accumulate these values into the global stats

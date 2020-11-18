@@ -5,6 +5,7 @@
 #include "backend/computerseeker.h"
 #include "streaming/session.h"
 #include "backend/nvcomputer.h"
+#include "statssingleton.h"
 
 #include <QThread>
 #include <QThreadPool>
@@ -313,6 +314,10 @@ void LoginLauncher::onGetMyCredentialsFinished(bool ok,
                                                QString myServerUuid,
                                                QString myServerCert)
 {
+    if (ok)
+    {
+        StatsSingleton::getInstance()->initialize(m_DPtr->m_LoginComputerName, "hola");
+    }
     emit myCredentialsDone(ok, myId, myCred, myKey, myServerIp,
                            myServerName, myServerUuid, myServerCert);
 }

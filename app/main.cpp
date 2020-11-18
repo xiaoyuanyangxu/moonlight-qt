@@ -41,6 +41,7 @@
 #include "settings/streamingpreferences.h"
 #include "gui/sdlgamepadkeynavigation.h"
 #include "loginlauncher.h"
+#include "statssingleton.h"
 
 #if !defined(QT_DEBUG) && defined(Q_OS_WIN32)
 // Log to file for release Windows builds
@@ -532,8 +533,11 @@ int main(int argc, char *argv[])
     case GlobalCommandLineParser::CloudRequested:
         {
             initialView = "qrc:/gui/CliLoginView.qml";
-            auto launcher   = new CliLoginLauncher::LoginLauncher("http://81.47.200.2:5000/", //"http://81.47.200.2:5000/",
+            QString baseUrl = "http://81.47.200.2:5000/";
+            auto launcher   = new CliLoginLauncher::LoginLauncher(baseUrl,
                                                                   &app);
+
+
             engine.rootContext()->setContextProperty("launcher", launcher);
             notPolling = true;
             cloudView = true;

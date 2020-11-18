@@ -160,6 +160,7 @@ SOURCES += \
     streaming/audio/renderers/sdlaud.cpp \
     gui/computermodel.cpp \
     gui/appmodel.cpp \
+    statssingleton.cpp \
     streaming/streamutils.cpp \
     backend/autoupdatechecker.cpp \
     path.cpp \
@@ -173,6 +174,7 @@ HEADERS += \
     backend/nvapp.h \
     backendapi.h \
     loginlauncher.h \
+    statssingleton.h \
     utils.h \
     backend/computerseeker.h \
     backend/identitymanager.h \
