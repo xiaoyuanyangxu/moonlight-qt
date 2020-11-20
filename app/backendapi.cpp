@@ -151,6 +151,42 @@ bool BackendAPI::getMyCredentials(QString &myId,
     return false;
 }
 
+bool BackendAPI::pushStats(QString &stats)
+{
+    QString answer;
+
+    qDebug() << Q_FUNC_INFO << stats;
+
+    return true;  // Mocked
+
+    try {
+        QMap<QString,QString> headers;
+        headers["Cookie"] = m_SessionId;
+        answer = openConnectionToString(m_BaseUrl,
+                                        "api/v1/connections/kpi",
+                                        nullptr,
+                                        headers,
+                                        REQUEST_TIMEOUT_MS,
+                                        true,
+                                        stats.toUtf8(),
+                                        nullptr
+                                       );
+
+        qDebug() << Q_FUNC_INFO << "Ack:" << answer;
+
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(answer.toUtf8());
+        QJsonObject msgObj = jsonDoc.object();
+        if (msgObj["status"] == "ok")
+        {
+            return true;
+        }else{
+            qWarning() << Q_FUNC_INFO << "Ack: status is not ok";
+        }
+    } catch (...) {
+        qWarning() << Q_FUNC_INFO << "Exception detected";
+    }
+}
+
 bool BackendAPI::getMyCredentialsMock(QString &myId,
                                       QString &myCert,
                                       QString &myKey,

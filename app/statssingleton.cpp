@@ -1,5 +1,10 @@
 #include "statssingleton.h"
 
+#include <QThread>
+#include <QThreadPool>
+#include <QCoreApplication>
+#include <QTimer>
+
 StatsSingleton* StatsSingleton::instance = 0;
 
 StatsSingleton::StatsSingleton()
@@ -29,6 +34,11 @@ bool StatsSingleton::intereded()
 void StatsSingleton::logStats(VIDEO_STATS &stats)
 {
     if (m_baseUrl.isEmpty()) return;
+
+    if (m_pushingStats)
+    {
+        return;
+    }
 
     QString clientId;
     QString deviceId;
@@ -90,8 +100,24 @@ void StatsSingleton::logStats(VIDEO_STATS &stats)
                 .arg(averageDecodeTime).arg(averageQueueTime).arg(averageRenderTime)
                 .arg(averageDropRate).arg(averageDataRate).arg(controlData);
 
-    printf(json.toUtf8().data());
 
+    StatsPushTask* task = new StatsPushTask(m_baseUrl,
+                                            m_sessionId,
+                                            json);
+
+    connect(task, &StatsPushTask::taskCompleted,
+             this, &StatsSingleton::onStatsPushFinished);
+
+    m_pushingStats = true;
+    QThreadPool::globalInstance()->start(task);
+}
+
+void StatsSingleton::onStatsPushFinished(bool ok)
+{
+    if (ok) {
+
+    }
+    m_pushingStats = false;
 }
 
 

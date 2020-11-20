@@ -30,6 +30,8 @@ public:
                           QString &myServerUuid,
                           QString &myServerCert);
 
+    bool pushStats(QString &stats);
+
 
     QString
     openConnectionToString(QUrl baseUrl,
