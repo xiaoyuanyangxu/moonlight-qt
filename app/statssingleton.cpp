@@ -4,11 +4,49 @@
 #include <QThreadPool>
 #include <QCoreApplication>
 #include <QTimer>
+#include <QSettings>
+#include <openssl/rand.h>
+#include <QDateTime>
 
 StatsSingleton* StatsSingleton::instance = 0;
 
+#define DEVICEID "deviceid"
+#define REPORTPERIOD_SEC 5
+
 StatsSingleton::StatsSingleton()
+    :m_pushingStats(false)
 {
+    QSettings settings;
+
+
+    // Load the unique ID from settings
+    m_deviceId = settings.value(DEVICEID).toString();
+    if (!m_deviceId.isEmpty()) {
+        qInfo() << "Loaded device ID from settings:" << m_deviceId;
+    }
+    else {
+        // Generate a new unique ID in base 16
+        uint64_t uid;
+        RAND_bytes(reinterpret_cast<unsigned char*>(&uid), sizeof(uid));
+        m_deviceId = QString::number(uid, 16);
+        qInfo() << "Generated new device ID:" << m_deviceId;
+        settings.setValue(DEVICEID, m_deviceId);
+    }
+
+    m_sessionId = QDateTime::currentDateTime().toString(Qt::ISODate);
+
+    m_deviceType = "UNKNOWN";
+    #ifdef Q_OS_WIN
+    m_deviceType = "WINDOWS";
+    #endif
+    #ifdef Q_OS_UNIX
+    m_deviceType = "UNIX";
+    #endif
+    #ifdef Q_OS_MACOS
+    m_deviceType = "MACOS";
+    #endif
+
+    m_lastStatsPush = QDateTime::currentDateTime();
 
 }
 
@@ -20,10 +58,12 @@ StatsSingleton *StatsSingleton::getInstance()
     return instance;
 }
 
-void StatsSingleton::initialize(QString baseUrl, QString sessionId)
+void StatsSingleton::initialize(QString baseUrl, QString sessionCookie)
 {
+    qDebug() << Q_FUNC_INFO << baseUrl << " cookie:" << sessionCookie;
     m_baseUrl   = baseUrl;
-    m_sessionId = sessionId;
+    m_sessionCookie = sessionCookie;
+    m_subSessionId = QDateTime::currentDateTime().toString(Qt::ISODate);
 }
 
 bool StatsSingleton::intereded()
@@ -33,6 +73,9 @@ bool StatsSingleton::intereded()
 
 void StatsSingleton::logStats(VIDEO_STATS &stats)
 {
+
+    qDebug() << Q_FUNC_INFO << m_baseUrl << m_pushingStats;
+
     if (m_baseUrl.isEmpty()) return;
 
     if (m_pushingStats)
@@ -40,11 +83,20 @@ void StatsSingleton::logStats(VIDEO_STATS &stats)
         return;
     }
 
-    QString clientId;
-    QString deviceId;
-    QString deviceType;
-    QString sessionId;
-    QString subSessionId;
+    QDateTime now = QDateTime::currentDateTime();
+    qint64 secondsDiff = m_lastStatsPush.secsTo(now);
+
+    if (secondsDiff < REPORTPERIOD_SEC)
+    {
+        return;
+    }
+    m_lastStatsPush = now;
+
+    QString clientId ="UNKNOWN";
+    QString deviceId = m_deviceId;
+    QString deviceType = m_deviceType;
+    QString sessionId = m_sessionId;
+    QString subSessionId = m_subSessionId;
     float fps=0, netFps=0, decodeFps=0, renderFps=0;
     float videoDataRate=0, averageDataRate=0;
     float networkDropRate=0, averageDropRate=0;
@@ -59,6 +111,7 @@ void StatsSingleton::logStats(VIDEO_STATS &stats)
         netFps = stats.receivedFps;
         decodeFps = stats.decodedFps;
         renderFps = stats.renderedFps;
+        videoDataRate = stats.videoDataRate;
     }
 
 
@@ -102,20 +155,21 @@ void StatsSingleton::logStats(VIDEO_STATS &stats)
 
 
     StatsPushTask* task = new StatsPushTask(m_baseUrl,
-                                            m_sessionId,
+                                            m_sessionCookie,
                                             json);
 
     connect(task, &StatsPushTask::taskCompleted,
              this, &StatsSingleton::onStatsPushFinished);
 
     m_pushingStats = true;
+
     QThreadPool::globalInstance()->start(task);
 }
 
 void StatsSingleton::onStatsPushFinished(bool ok)
 {
-    if (ok) {
-
+    if (!ok) {
+        qDebug() << Q_FUNC_INFO << " error in pushing stats to backend";
     }
     m_pushingStats = false;
 }

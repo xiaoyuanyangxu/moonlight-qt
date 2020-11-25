@@ -86,6 +86,7 @@ public:
         case Event::Login:
             {
                 m_State = StatePerformLogin;
+                m_sessionId = "";
 
                 LoginTask* loginTask = new LoginTask(m_LoginComputerName,
                                                      event.serverCert,
@@ -149,6 +150,7 @@ public:
         case Event::GetMyCredentials:
             {
                 m_State = StateGettingCreadentials;
+                m_sessionId = event.sessionId;
 
                 GetCredentialTask* pTask = new GetCredentialTask(m_LoginComputerName,
                                                                  event.sessionId);
@@ -182,6 +184,7 @@ public:
 
     LoginLauncher *q_ptr;
     QString m_LoginComputerName;
+    QString m_sessionId;
     QString m_ComputerName;
     QString m_AppName;
     StreamingPreferences *m_Preferences;
@@ -298,9 +301,13 @@ QString LoginLauncher::getLastUsername()
 
 void LoginLauncher::onLoginFinished(bool ok, QString data)
 {
+    Q_D(LoginLauncher);
     if (ok) {
         QSettings settings;
         settings.setValue(SESSION_COOKIE, data);
+        d->m_sessionId = data;
+
+        qDebug() << Q_FUNC_INFO << "Cookie: " << data;
     }
     emit logginDone(ok, data);
 }
@@ -314,9 +321,10 @@ void LoginLauncher::onGetMyCredentialsFinished(bool ok,
                                                QString myServerUuid,
                                                QString myServerCert)
 {
+    Q_D(const LoginLauncher);
     if (ok)
     {
-        StatsSingleton::getInstance()->initialize(m_DPtr->m_LoginComputerName, "hola");
+        StatsSingleton::getInstance()->initialize(m_DPtr->m_LoginComputerName, d->m_sessionId);
     }
     emit myCredentialsDone(ok, myId, myCred, myKey, myServerIp,
                            myServerName, myServerUuid, myServerCert);

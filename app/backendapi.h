@@ -37,7 +37,7 @@ public:
     openConnectionToString(QUrl baseUrl,
                            QString command,
                            QString arguments, QMap<QString, QString> extraHeaders,
-                           int timeoutMs, bool isAPost, const QByteArray &postBody, QList<QNetworkCookie> *cookies);
+                           int timeoutMs, bool isAPost, const QByteArray &postBody, QList<QNetworkCookie> *cookies, int &statusCode);
 
     QUrl m_BaseUrl;
 

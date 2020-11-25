@@ -33,7 +33,7 @@ signals:
 private:
     void run()
     {
-        qDebug() << Q_FUNC_INFO << "Run thread StatsPushTask";
+        qDebug() << Q_FUNC_INFO << "Run thread StatsPushTask" << m_baseUrl << " cookie:" << m_sessionId;
         BackendAPI backend(m_baseUrl,
                            m_sessionId);
 
@@ -59,7 +59,7 @@ private:
 public:
     static StatsSingleton* getInstance();
 
-    void initialize(QString baseUrl, QString sessionId);
+    void initialize(QString baseUrl, QString sessionCookie);
 
     bool intereded();
 
@@ -70,7 +70,12 @@ public slots:
 
 private:
     QString m_baseUrl;
+    QString m_sessionCookie;
     QString m_sessionId;
+    QString m_subSessionId;
+    QString m_deviceId;
+    QString m_deviceType;
+    QDateTime m_lastStatsPush;
 
     bool m_pushingStats;
 };

@@ -23,6 +23,11 @@ typedef struct _VIDEO_STATS {
     float receivedFps;
     float decodedFps;
     float renderedFps;
+
+    uint32_t videoLength;
+    float videoDataRate;
+
+
     uint32_t measurementStartTimestamp;
 } VIDEO_STATS, *PVIDEO_STATS;
 

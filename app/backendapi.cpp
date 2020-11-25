@@ -51,6 +51,7 @@ bool BackendAPI::login(QString userName, QString password, QString &sessionId)
         QString postBody = QString("{\n\"email\": \"%1\",\n\"password\":\"%2\"\n}\n\n").arg(userName).arg(password);
         QMap<QString,QString> headers;
         QList<QNetworkCookie> cookies;
+        int status;
         //headers["content-type"] = "application/json";
         answer = openConnectionToString(m_BaseUrl,
                                         "api/v1/auth/login",
@@ -59,7 +60,7 @@ bool BackendAPI::login(QString userName, QString password, QString &sessionId)
                                         REQUEST_TIMEOUT_MS,
                                         true,
                                         postBody.toUtf8(),
-                                        &cookies
+                                        &cookies, status
                                        );
 
         qDebug() << Q_FUNC_INFO << "Ack:" << answer;
@@ -102,7 +103,7 @@ bool BackendAPI::getMyCredentials(QString &myId,
                                   QString &myServerUuid,
                                   QString &myServerCert)
 {
-    //return getMyCredentialsMock(myId, myCert, myKey, myServerIP, myServerName, myServerUuid, myServerCert);
+    return getMyCredentialsMock(myId, myCert, myKey, myServerIP, myServerName, myServerUuid, myServerCert);
 
     QString answer;
 
@@ -110,6 +111,7 @@ bool BackendAPI::getMyCredentials(QString &myId,
 
     try {
         QMap<QString,QString> headers;
+        int status;
 
         headers["Cookie"] = m_SessionId;
         answer = openConnectionToString(m_BaseUrl,
@@ -119,7 +121,7 @@ bool BackendAPI::getMyCredentials(QString &myId,
                                         REQUEST_TIMEOUT_MS,
                                         false,
                                         QByteArray(),
-                                        nullptr);
+                                        nullptr, status);
 
         qDebug() << Q_FUNC_INFO << "Ack:" << answer;
 
@@ -157,10 +159,11 @@ bool BackendAPI::pushStats(QString &stats)
 
     qDebug() << Q_FUNC_INFO << stats;
 
-    return true;  // Mocked
+    //return true;  // Mocked
 
     try {
         QMap<QString,QString> headers;
+        int status;
         headers["Cookie"] = m_SessionId;
         answer = openConnectionToString(m_BaseUrl,
                                         "api/v1/connections/kpi",
@@ -169,22 +172,14 @@ bool BackendAPI::pushStats(QString &stats)
                                         REQUEST_TIMEOUT_MS,
                                         true,
                                         stats.toUtf8(),
-                                        nullptr
+                                        nullptr, status
                                        );
 
-        qDebug() << Q_FUNC_INFO << "Ack:" << answer;
-
-        QJsonDocument jsonDoc = QJsonDocument::fromJson(answer.toUtf8());
-        QJsonObject msgObj = jsonDoc.object();
-        if (msgObj["status"] == "ok")
-        {
-            return true;
-        }else{
-            qWarning() << Q_FUNC_INFO << "Ack: status is not ok";
-        }
+        return (status == 200);
     } catch (...) {
         qWarning() << Q_FUNC_INFO << "Exception detected";
     }
+    return false;
 }
 
 bool BackendAPI::getMyCredentialsMock(QString &myId,
@@ -282,7 +277,8 @@ QString BackendAPI::openConnectionToString(QUrl baseUrl,
                                            int timeoutMs,
                                            bool isAPost,
                                            const QByteArray & postBody,
-                                           QList<QNetworkCookie> *cookies)
+                                           QList<QNetworkCookie> *cookies,
+                                           int &statusCode)
 {
     QNetworkReply* reply = openConnection(baseUrl, command, arguments,
                                           extraHeaders, timeoutMs,
@@ -303,6 +299,14 @@ QString BackendAPI::openConnectionToString(QUrl baseUrl,
                cookies->push_back(c);
            }
        }
+   }
+
+   QVariant status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
+   if (status.isValid()){
+       // Print or catch the status code
+       statusCode = status.toUInt(0);
+   }else{
+       statusCode = 0;
    }
 
     delete reply;

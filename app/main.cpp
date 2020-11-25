@@ -533,7 +533,8 @@ int main(int argc, char *argv[])
     case GlobalCommandLineParser::CloudRequested:
         {
             initialView = "qrc:/gui/CliLoginView.qml";
-            QString baseUrl = "http://81.47.200.2:5000/";
+            //QString baseUrl = "http://81.47.200.2:5000/";
+            QString baseUrl = "http://81.47.200.173:3000/";
             auto launcher   = new CliLoginLauncher::LoginLauncher(baseUrl,
                                                                   &app);
 
