@@ -20,6 +20,8 @@ public:
 
     bool login(QString userName, QString password, QString& sessionId);
 
+    bool changePassword(QString oldPassword, QString newPassword);
+
     void setSessionId(QString sessionId);
 
     bool getMyCredentials(QString & myId,
@@ -41,6 +43,7 @@ public:
 
     QUrl m_BaseUrl;
 
+
 private:
     bool getMyCredentialsMock(QString & myId,
                               QString & myCert,
@@ -50,6 +53,8 @@ private:
                               QString &myServerUuid,
                               QString &myServerCert);
     bool loginMock(QString userName, QString password, QString& sessionId);
+
+    bool changePasswordMock(QString oldPassword, QString newPassword);
 
 private:
     void

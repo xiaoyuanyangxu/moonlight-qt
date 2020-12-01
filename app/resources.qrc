@@ -31,6 +31,9 @@
         <file>res/login.svg</file>
         <file>res/logo_ludico_iso_ludico_negro.png</file>
         <file>res/ludico_edge_logo.svg</file>
+        <file>res/user.svg</file>
+        <file>res/user_white.svg</file>
+        <file>res/password.svg</file>
     </qresource>
     <qresource prefix="/data">
         <file alias="gamecontrollerdb.txt">SDL_GameControllerDB/gamecontrollerdb.txt</file>

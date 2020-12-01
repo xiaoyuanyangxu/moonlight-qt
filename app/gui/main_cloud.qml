@@ -17,6 +17,14 @@ ApplicationWindow {
     width: 1280
     height: 600
 
+    function onChangePassword(ok) {
+        console.log("onChangePassword: ", ok)
+        if (!ok) {
+            changePasswordErrorDialog.open()
+        }
+    }
+
+
     background: Rectangle {
         id: background
         anchors.fill: parent;
@@ -251,6 +259,7 @@ ApplicationWindow {
             verticalAlignment: Qt.AlignVCenter
         }
 
+
         RowLayout {
             spacing: 5
             anchors.leftMargin: 5
@@ -314,21 +323,41 @@ ApplicationWindow {
                 id: loggoutButton
                 opacity: 1.0
 
-                iconSource:  "qrc:/res/logout.svg"
+                iconSource:  "qrc:/res/user_white.svg"
 
                 onClicked: {
-                    toolBar.visible = false
-                    stackView.pop()
-                    launcher.logout()
-                    stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                    menu.open()
                 }
 
                 Keys.onDownPressed: {
                     stackView.currentItem.forceActiveFocus(Qt.TabFocus)
                 }
+
+                Menu {
+                    id: menu
+                    MenuItem {
+                        text: "Logout"
+                        icon.source:  "qrc:/res/logout.svg"
+                        onClicked: {
+                            toolBar.visible = false
+                            stackView.pop()
+                            launcher.logout()
+                            stackView.currentItem.forceActiveFocus(Qt.TabFocus)
+                        }
+                    }
+                    MenuItem {
+                        text: "Change Password"
+                        icon.source:  "qrc:/res/password.svg"
+                        onClicked: {
+                            passwordChangeDialog.open()
+                        }
+                    }
+                }
             }
         }
     }
+
+
 
     ErrorMessageDialog {
         id: noHwDecoderDialog
@@ -373,6 +402,11 @@ ApplicationWindow {
         onAccepted: Qt.quit()
     }
 
+    NavigableMessageDialog {
+        id: changePasswordErrorDialog
+        text: "Error in changing password"
+    }
+
     // HACK: This belongs in StreamSegue but keeping a dialog around after the parent
     // dies can trigger bugs in Qt 5.12 that cause the app to crash. For now, we will
     // host this dialog in a QML component that is never destroyed.
@@ -393,6 +427,20 @@ ApplicationWindow {
             // StreamSegue assumes its dialog will be re-created each time we
             // start streaming, so fake it by wiping out the text each time.
             text = ""
+        }
+    }
+    PasswordChangeDialog {
+        id: passwordChangeDialog
+
+
+        onAccepted:
+        {
+            launcher.changePasswordDone.connect(onChangePassword)
+            launcher.changePassword(oldPassword, newPassword)
+        }
+
+        onRejected: {
+
         }
     }
 }

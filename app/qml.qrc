@@ -22,5 +22,6 @@
         <file>gui/CliLoginView.qml</file>
         <file>gui/main_cloud.qml</file>
         <file>gui/SettingsViewCloud.qml</file>
+        <file>gui/PasswordChangeDialog.qml</file>
     </qresource>
 </RCC>

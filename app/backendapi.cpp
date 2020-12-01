@@ -13,6 +13,7 @@
 #include <QEventLoop>
 #include <QJsonDocument>
 #include <QNetworkCookie>
+#include <QThread>
 #include <backend/nvhttp.h>
 
 #define REQUEST_TIMEOUT_MS 5000
@@ -103,7 +104,7 @@ bool BackendAPI::getMyCredentials(QString &myId,
                                   QString &myServerUuid,
                                   QString &myServerCert)
 {
-    return getMyCredentialsMock(myId, myCert, myKey, myServerIP, myServerName, myServerUuid, myServerCert);
+    //return getMyCredentialsMock(myId, myCert, myKey, myServerIP, myServerName, myServerUuid, myServerCert);
 
     QString answer;
 
@@ -159,7 +160,7 @@ bool BackendAPI::pushStats(QString &stats)
 
     qDebug() << Q_FUNC_INFO << stats;
 
-    //return true;  // Mocked
+    return true;  // Mocked
 
     try {
         QMap<QString,QString> headers;
@@ -172,6 +173,39 @@ bool BackendAPI::pushStats(QString &stats)
                                         REQUEST_TIMEOUT_MS,
                                         true,
                                         stats.toUtf8(),
+                                        nullptr, status
+                                       );
+
+        return (status == 200);
+    } catch (...) {
+        qWarning() << Q_FUNC_INFO << "Exception detected";
+    }
+    return false;
+}
+
+bool BackendAPI::changePassword(QString oldPassword, QString newPassword)
+{
+    QString answer;
+
+    qDebug() << Q_FUNC_INFO;
+
+    return changePasswordMock(oldPassword, newPassword);
+
+    try {
+        QString postBody = QString("{\n\"old_password\": \"%1\",\n\"new_password\":\"%2\"\n}\n\n")
+                                .arg(oldPassword)
+                                .arg(newPassword);
+
+        QMap<QString,QString> headers;
+        int status;
+        headers["Cookie"] = m_SessionId;
+        answer = openConnectionToString(m_BaseUrl,
+                                        "api/v1/auth/change_password",
+                                        nullptr,
+                                        headers,
+                                        REQUEST_TIMEOUT_MS,
+                                        true,
+                                        postBody.toUtf8(),
                                         nullptr, status
                                        );
 
@@ -263,6 +297,21 @@ bool BackendAPI::loginMock(QString userName, QString password, QString &sessionI
             sessionId = "";
             return false;
         }
+        return true;
+    } catch (...) {
+        qWarning() << Q_FUNC_INFO << "Exception detected";
+    }
+    return false;
+}
+
+bool BackendAPI::changePasswordMock(QString oldPassword, QString newPassword)
+{
+    QString answer;
+
+    qDebug() << Q_FUNC_INFO << "old: " << oldPassword << " new:" << newPassword;
+
+    try {
+        QThread::sleep(1);
         return true;
     } catch (...) {
         qWarning() << Q_FUNC_INFO << "Exception detected";

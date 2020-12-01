@@ -31,6 +31,7 @@ class Event
 public:
     enum Type {
         Login,
+        ChangePassword,
         GetMyCredentials,
         SeekComputer,
         AppQuitCompleted,
@@ -47,6 +48,10 @@ public:
     Type type;
     QString userName;
     QString password;
+
+    QString oldPassword;
+    QString newPassword;
+
     QSslCertificate serverCert;
     QString sessionId;
 
@@ -102,6 +107,43 @@ public:
                 emit q->performingLogin();
             }
             break;
+
+        case Event::GetMyCredentials:
+            {
+                m_State = StateGettingCreadentials;
+                m_sessionId = event.sessionId;
+
+                GetCredentialTask* pTask = new GetCredentialTask(m_LoginComputerName,
+                                                                 event.sessionId);
+
+                q->connect(pTask, &GetCredentialTask::taskCompleted,
+                        q, &LoginLauncher::onGetMyCredentialsFinished);
+
+                QThreadPool::globalInstance()->start(pTask);
+
+
+                emit q->performingGetMyCreadentials();
+            }
+            break;
+
+        case Event::ChangePassword:
+            {
+                m_State = StateGettingCreadentials;
+
+                ChangePasswordTask* pTask = new ChangePasswordTask(m_LoginComputerName,
+                                                                  event.sessionId,
+                                                                  event.oldPassword,
+                                                                  event.newPassword);
+
+                q->connect(pTask, &ChangePasswordTask::taskCompleted,
+                        q, &LoginLauncher::onChangePasswordFinished);
+
+                QThreadPool::globalInstance()->start(pTask);
+
+
+                emit q->performingChangePassword();
+            }
+            break;
         case Event::SeekComputer:
             {
                 if (m_State != StateSeekComputer &&
@@ -147,23 +189,7 @@ public:
                                       event.index);
             }
             break;
-        case Event::GetMyCredentials:
-            {
-                m_State = StateGettingCreadentials;
-                m_sessionId = event.sessionId;
 
-                GetCredentialTask* pTask = new GetCredentialTask(m_LoginComputerName,
-                                                                 event.sessionId);
-
-                q->connect(pTask, &GetCredentialTask::taskCompleted,
-                        q, &LoginLauncher::onGetMyCredentialsFinished);
-
-                QThreadPool::globalInstance()->start(pTask);
-
-
-                emit q->performingGetMyCreadentials();
-            }
-            break;
         case Event::Timedout:
             qDebug() << "Timeout";
             if (m_State == StatePerformLogin) {
@@ -244,6 +270,17 @@ void LoginLauncher::logout()
     settings.setValue(SESSION_COOKIE, "");
 }
 
+void LoginLauncher::changePassword(QString oldPassword, QString newPassword)
+{
+    Q_D(LoginLauncher);
+    Event event(Event::ChangePassword);
+    event.sessionId = d->m_sessionId;
+    event.oldPassword = oldPassword;
+    event.newPassword = newPassword;
+
+    d->handleEvent(event);
+}
+
 void LoginLauncher::seekComputer(ComputerManager *manager,
                                  QString myId,
                                  QString myCred,
@@ -310,6 +347,13 @@ void LoginLauncher::onLoginFinished(bool ok, QString data)
         qDebug() << Q_FUNC_INFO << "Cookie: " << data;
     }
     emit logginDone(ok, data);
+}
+
+void LoginLauncher::onChangePasswordFinished(bool ok)
+{
+    Q_D(LoginLauncher);
+    qDebug() << Q_FUNC_INFO;
+    emit changePasswordDone(ok);
 }
 
 void LoginLauncher::onGetMyCredentialsFinished(bool ok,

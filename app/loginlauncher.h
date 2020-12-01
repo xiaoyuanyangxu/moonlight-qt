@@ -56,6 +56,43 @@ private:
     QString m_password;
 };
 
+
+class ChangePasswordTask: public QObject, public QRunnable
+{
+    Q_OBJECT
+
+public:
+
+    explicit ChangePasswordTask(  QString baseUrl,
+                                  QString sessionId,
+                                  QString oldPassword,
+                                  QString newPassword)
+        : m_baseUrl(baseUrl),
+          m_sessionId(sessionId),
+          m_oldPassword(oldPassword),
+          m_newPassword(newPassword)
+    {
+
+    }
+
+    ~ChangePasswordTask(){}
+
+signals:
+    void taskCompleted(bool ok);
+
+private:
+    void run()
+    {
+        BackendAPI backend(m_baseUrl,m_sessionId);
+        bool ok = backend.changePassword(m_oldPassword, m_newPassword);
+        emit taskCompleted(ok);
+    }
+    QString m_baseUrl;
+    QString m_sessionId;
+    QString m_oldPassword;
+    QString m_newPassword;
+};
+
 class GetCredentialTask: public QObject, public QRunnable
 {
     Q_OBJECT
@@ -118,6 +155,8 @@ public:
     Q_INVOKABLE void getMyCredentials(QString sessionId);
     Q_INVOKABLE void login(QString username, QString password);
     Q_INVOKABLE void logout();
+    Q_INVOKABLE void changePassword(QString oldPassword, QString newPassword);
+
 
     Q_INVOKABLE void seekComputer(ComputerManager *manager,
                                   QString myId,
@@ -141,8 +180,11 @@ signals:
                            QString myServerUuid,
                            QString myServerCert);
     void logginDone(bool ok, QString data);
+    void changePasswordDone(bool ok);
+
     void performingLogin();
     void performingGetMyCreadentials();
+    void performingChangePassword();
 
     void searchingComputer();
     void searchingComputerDone(bool ok, QString data);
@@ -151,6 +193,7 @@ signals:
 
 public slots:
     void onLoginFinished(bool ok, QString data);
+    void onChangePasswordFinished(bool ok);
     void onGetMyCredentialsFinished(bool ok,
                                     QString myId, QString myCred, QString myKey,
                                     QString myServerIp, QString myServerName,
