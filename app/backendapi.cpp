@@ -217,9 +217,16 @@ bool BackendAPI::changePassword(QString userName, QString oldPassword, QString n
         qDebug() << Q_FUNC_INFO << "result:" << answer;
 
         return (status == 200);
-    } catch (...) {
-        msg = "Password need be longer than 6 characters and can only contain numbers and letters";
-        qWarning() << Q_FUNC_INFO << "Exception detected";
+    } catch (QtNetworkReplyException e) {
+        qWarning() << Q_FUNC_INFO << "Exception detected: " << e.toQString();
+
+        QJsonDocument doc = QJsonDocument::fromJson(e.getErrorText());
+        QJsonObject jObject = doc.object();
+
+        msg  = jObject["message"].toString("Unknown Error");
+
+        //msg = e.toQString(); //"Password need be longer than 6 characters and can only contain numbers and letters";
+
     }
     return false;
 }
@@ -456,7 +463,12 @@ QNetworkReply *BackendAPI::openConnection(QUrl baseUrl,
             throw exception;
         }
         else {
-            QtNetworkReplyException exception(reply->error(), reply->errorString());
+            QString msg;
+            QTextStream stream(reply);
+            stream.setCodec("UTF-8");
+            msg = stream.readAll();
+
+            QtNetworkReplyException exception(reply->error(), msg);
             delete reply;
             throw exception;
         }

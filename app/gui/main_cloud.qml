@@ -406,7 +406,7 @@ ApplicationWindow {
     NavigableMessageDialog {
         id: changePasswordErrorDialog
         property string changePasswordErrorMsg: ""
-        text: "Error in changing password\n" + changePasswordErrorMsg
+        text: "Error in changing password\n" + "Error: " + changePasswordErrorMsg
     }
 
     // HACK: This belongs in StreamSegue but keeping a dialog around after the parent
