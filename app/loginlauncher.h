@@ -65,10 +65,12 @@ public:
 
     explicit ChangePasswordTask(  QString baseUrl,
                                   QString sessionId,
+                                  QString userName,
                                   QString oldPassword,
                                   QString newPassword)
         : m_baseUrl(baseUrl),
           m_sessionId(sessionId),
+          m_userName(userName),
           m_oldPassword(oldPassword),
           m_newPassword(newPassword)
     {
@@ -78,17 +80,19 @@ public:
     ~ChangePasswordTask(){}
 
 signals:
-    void taskCompleted(bool ok);
+    void taskCompleted(bool ok, QString msg);
 
 private:
     void run()
     {
         BackendAPI backend(m_baseUrl,m_sessionId);
-        bool ok = backend.changePassword(m_oldPassword, m_newPassword);
-        emit taskCompleted(ok);
+        QString msg;
+        bool ok = backend.changePassword(m_userName, m_oldPassword, m_newPassword, msg);
+        emit taskCompleted(ok, msg);
     }
     QString m_baseUrl;
     QString m_sessionId;
+    QString m_userName;
     QString m_oldPassword;
     QString m_newPassword;
 };
@@ -155,7 +159,7 @@ public:
     Q_INVOKABLE void getMyCredentials(QString sessionId);
     Q_INVOKABLE void login(QString username, QString password);
     Q_INVOKABLE void logout();
-    Q_INVOKABLE void changePassword(QString oldPassword, QString newPassword);
+    Q_INVOKABLE void changePassword(QString username, QString oldPassword, QString newPassword);
 
 
     Q_INVOKABLE void seekComputer(ComputerManager *manager,
@@ -180,7 +184,7 @@ signals:
                            QString myServerUuid,
                            QString myServerCert);
     void logginDone(bool ok, QString data);
-    void changePasswordDone(bool ok);
+    void changePasswordDone(bool ok, QString msg);
 
     void performingLogin();
     void performingGetMyCreadentials();
@@ -193,7 +197,7 @@ signals:
 
 public slots:
     void onLoginFinished(bool ok, QString data);
-    void onChangePasswordFinished(bool ok);
+    void onChangePasswordFinished(bool ok, QString msg);
     void onGetMyCredentialsFinished(bool ok,
                                     QString myId, QString myCred, QString myKey,
                                     QString myServerIp, QString myServerName,

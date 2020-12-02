@@ -132,6 +132,7 @@ public:
 
                 ChangePasswordTask* pTask = new ChangePasswordTask(m_LoginComputerName,
                                                                   event.sessionId,
+                                                                  event.userName,
                                                                   event.oldPassword,
                                                                   event.newPassword);
 
@@ -270,11 +271,12 @@ void LoginLauncher::logout()
     settings.setValue(SESSION_COOKIE, "");
 }
 
-void LoginLauncher::changePassword(QString oldPassword, QString newPassword)
+void LoginLauncher::changePassword(QString userName, QString oldPassword, QString newPassword)
 {
     Q_D(LoginLauncher);
     Event event(Event::ChangePassword);
     event.sessionId = d->m_sessionId;
+    event.userName = userName;
     event.oldPassword = oldPassword;
     event.newPassword = newPassword;
 
@@ -349,11 +351,11 @@ void LoginLauncher::onLoginFinished(bool ok, QString data)
     emit logginDone(ok, data);
 }
 
-void LoginLauncher::onChangePasswordFinished(bool ok)
+void LoginLauncher::onChangePasswordFinished(bool ok, QString msg)
 {
     Q_D(LoginLauncher);
-    qDebug() << Q_FUNC_INFO;
-    emit changePasswordDone(ok);
+    qDebug() << Q_FUNC_INFO<< ok << msg;
+    emit changePasswordDone(ok, msg);
 }
 
 void LoginLauncher::onGetMyCredentialsFinished(bool ok,

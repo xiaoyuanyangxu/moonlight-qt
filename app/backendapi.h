@@ -20,7 +20,7 @@ public:
 
     bool login(QString userName, QString password, QString& sessionId);
 
-    bool changePassword(QString oldPassword, QString newPassword);
+    bool changePassword(QString userName, QString oldPassword, QString newPassword, QString &msg);
 
     void setSessionId(QString sessionId);
 

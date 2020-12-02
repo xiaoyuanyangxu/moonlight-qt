@@ -183,24 +183,28 @@ bool BackendAPI::pushStats(QString &stats)
     return false;
 }
 
-bool BackendAPI::changePassword(QString oldPassword, QString newPassword)
+bool BackendAPI::changePassword(QString userName, QString oldPassword, QString newPassword, QString &msg)
 {
     QString answer;
 
     qDebug() << Q_FUNC_INFO;
 
-    return changePasswordMock(oldPassword, newPassword);
+    //return changePasswordMock(oldPassword, newPassword);
 
     try {
-        QString postBody = QString("{\n\"old_password\": \"%1\",\n\"new_password\":\"%2\"\n}\n\n")
+        QString postBody = QString("{\n\"email\": \"%1\",\n\"oldPassword\": \"%2\",\n\"newPassword\":\"%3\"\n}\n\n")
+                                .arg(userName)
                                 .arg(oldPassword)
                                 .arg(newPassword);
 
         QMap<QString,QString> headers;
         int status;
         headers["Cookie"] = m_SessionId;
+
+        qDebug() << Q_FUNC_INFO << "perform request";
+
         answer = openConnectionToString(m_BaseUrl,
-                                        "api/v1/auth/change_password",
+                                        "api/v1/users/updatePassword",
                                         nullptr,
                                         headers,
                                         REQUEST_TIMEOUT_MS,
@@ -208,9 +212,13 @@ bool BackendAPI::changePassword(QString oldPassword, QString newPassword)
                                         postBody.toUtf8(),
                                         nullptr, status
                                        );
+        msg = answer;
+
+        qDebug() << Q_FUNC_INFO << "result:" << answer;
 
         return (status == 200);
     } catch (...) {
+        msg = "Password need be longer than 6 characters and can only contain numbers and letters";
         qWarning() << Q_FUNC_INFO << "Exception detected";
     }
     return false;

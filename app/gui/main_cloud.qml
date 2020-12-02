@@ -17,9 +17,10 @@ ApplicationWindow {
     width: 1280
     height: 600
 
-    function onChangePassword(ok) {
-        console.log("onChangePassword: ", ok)
+    function onChangePassword(ok, msg) {
+        console.log("onChangePassword: ", ok, msg)
         if (!ok) {
+            changePasswordErrorDialog.changePasswordErrorMsg = msg
             changePasswordErrorDialog.open()
         }
     }
@@ -404,7 +405,8 @@ ApplicationWindow {
 
     NavigableMessageDialog {
         id: changePasswordErrorDialog
-        text: "Error in changing password"
+        property string changePasswordErrorMsg: ""
+        text: "Error in changing password\n" + changePasswordErrorMsg
     }
 
     // HACK: This belongs in StreamSegue but keeping a dialog around after the parent
@@ -436,7 +438,7 @@ ApplicationWindow {
         onAccepted:
         {
             launcher.changePasswordDone.connect(onChangePassword)
-            launcher.changePassword(oldPassword, newPassword)
+            launcher.changePassword(launcher.getLastUsername(), oldPassword, newPassword)
         }
 
         onRejected: {
