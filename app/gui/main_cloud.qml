@@ -341,6 +341,7 @@ ApplicationWindow {
                         icon.source:  "qrc:/res/logout.svg"
                         onClicked: {
                             toolBar.visible = false
+
                             stackView.pop()
                             launcher.logout()
                             stackView.currentItem.forceActiveFocus(Qt.TabFocus)
@@ -433,7 +434,6 @@ ApplicationWindow {
     }
     PasswordChangeDialog {
         id: passwordChangeDialog
-
 
         onAccepted:
         {

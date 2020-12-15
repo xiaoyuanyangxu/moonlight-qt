@@ -34,6 +34,7 @@
 #include "path.h"
 #include "utils.h"
 #include "gui/computermodel.h"
+#include "gui/cloudcomputermodel.h"
 #include "gui/appmodel.h"
 #include "backend/autoupdatechecker.h"
 #include "backend/systemproperties.h"
@@ -489,6 +490,7 @@ int main(int argc, char *argv[])
                                                        return new StreamingPreferences();
                                                    });
 
+    qmlRegisterType<CloudComputerModel>("CloudComputerModel", 1, 0, "CloudComputerModel");
     // Create the identity manager on the main thread
     IdentityManager::get();
 

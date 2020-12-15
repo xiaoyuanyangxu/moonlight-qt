@@ -12,7 +12,12 @@ Item {
     property string myId: ""
     property string myCred: ""
     property string myKey: ""
+
     property string myServerIp: ""
+    property string myServerName: ""
+    property string myServerUuid: ""
+    property string myServerCert: ""
+
     property string computerName: ""
 
     function onSearchingComputer() {
@@ -41,26 +46,7 @@ Item {
         }
     }
 
-    function onComputerReady(enabled, index){
-        contactingWithBackend = false
-        if (enabled)
-        {
-            stageLabel.text = ""
-            password.text = ""
-            toolBar.visible = true
-            loginRequired = true
-            var component = Qt.createComponent("AppView.qml")
-            var appView = component.createObject(stackView, {"computerIndex": index, "objectName": computerName})
-            stackView.push(appView)
-
-        }else{
-            stageLabel.text = "Error in pairing with the computer..."
-            loginRequired = true
-            animateOpacityUp.start()
-        }
-    }
-
-    function onMyCredentialsDone(ok, id, cred, key, ip, name, uuid, cert) {
+    function onMyCredentialsDone(ok, id, cred, key, ip, serverName, uuid, cert) {
         contactingWithBackend = false
         if (ok) {
             stageLabel.text = "We got your credentials";
@@ -68,6 +54,10 @@ Item {
             myCred = cred
             myKey = key
             myServerIp = ip
+            myServerName = serverName
+            myServerUuid = uuid
+            myServerCert = cert
+
             loginRequired = false
 
             if (myId.length == 0 || myCred.length == 0 ||
@@ -76,13 +66,19 @@ Item {
                 stageLabel.text = "No server is available. Try again!";
                 loginRequired = true
                 animateOpacityUp.start()
-
             }else{
-                launcher.seekComputer(ComputerManager,
-                                  myId,
-                                  myCred,
-                                  myKey,
-                                  myServerIp, name, uuid, cert)
+                toolBar.visible = true
+                var component = Qt.createComponent("CloudLandingView.qml")
+                var cloudComputerView = component.createObject(stackView, {"computerList": [
+                                                                                    {"userId":myId,
+                                                                                             "userCred": myCred,
+                                                                                             "userKey": myKey,
+                                                                                             "serverIp": myServerIp,
+                                                                                             "serverName": serverName,
+                                                                                             "serverUuid": uuid,
+                                                                                             "serverCert": cert
+                                                                                    }]})
+                stackView.push(cloudComputerView)
             }
         }else{
             stageLabel.text = "Error in getting your creadentials. Login required";
@@ -115,15 +111,6 @@ Item {
         }
     }
 
-    function onSessionCreated(appName, session) {
-        var component = Qt.createComponent("StreamSegue.qml")
-        var segue = component.createObject(stackView, {
-            "appName": appName,
-            "session": session,
-            "quitAfter": true
-        })
-        stackView.push(segue)
-    }
 
     function onLaunchFailed(message) {
         errorDialog.text = message
@@ -137,25 +124,20 @@ Item {
 
     StackView.onActivated: {
 
-
         SdlGamepadKeyNavigation.enable()
         if (!launcher.isExecuted()) {
-            toolBar.visible = false
+            toolBar.visible = true
             launcher.searchingComputer.connect(onSearchingComputer)
             launcher.performingGetMyCreadentials.connect(onPerformingGetMyCreadentials)
             launcher.myCredentialsDone.connect(onMyCredentialsDone)
             launcher.performingLogin.connect(onPerformingLogin)
             launcher.logginDone.connect(onLogginDone)
-
-            launcher.searchingComputerDone.connect(onSearchingComputerDone)
-            launcher.computerReady.connect(onComputerReady)
-
-            sessionId = launcher.getCachedSessionCookie();
-            if (sessionId.length > 0) {
-                launcher.getMyCredentials(sessionId)
-            }else{
-                loginRequired = true
-            }
+        }
+        sessionId = launcher.getCachedSessionCookie();
+        if (sessionId.length > 0) {
+            launcher.getMyCredentials(sessionId)
+        }else{
+            loginRequired = true
         }
     }
 
@@ -228,6 +210,7 @@ Item {
             Qt.quit();
         }
     }
+
 
     NavigableMessageDialog {
         id: quitAppDialog

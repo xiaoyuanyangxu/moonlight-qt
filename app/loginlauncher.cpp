@@ -1,5 +1,6 @@
 #include "backendapi.h"
 #include "loginlauncher.h"
+#include "loginlauncher.h"
 
 #include "backend/computermanager.h"
 #include "backend/computerseeker.h"
@@ -32,6 +33,8 @@ public:
     enum Type {
         Login,
         ChangePassword,
+        ResetMachine,
+        GetCurrentStatus,
         GetMyCredentials,
         SeekComputer,
         AppQuitCompleted,
@@ -64,6 +67,7 @@ public:
 
     ComputerManager *computerManager;
     QString computerIp;
+    QString machineId;
     int index;
 
     NvComputer *computer;
@@ -128,8 +132,6 @@ public:
 
         case Event::ChangePassword:
             {
-                m_State = StateGettingCreadentials;
-
                 ChangePasswordTask* pTask = new ChangePasswordTask(m_LoginComputerName,
                                                                   event.sessionId,
                                                                   event.userName,
@@ -145,10 +147,41 @@ public:
                 emit q->performingChangePassword();
             }
             break;
+        case Event::ResetMachine:
+            {
+                ResetMachineTask* pTask = new ResetMachineTask(m_LoginComputerName,
+                                                                  event.sessionId,
+                                                                  event.machineId);
+
+                q->connect(pTask, &ResetMachineTask::taskCompleted,
+                        q, &LoginLauncher::onResetMachineFinished);
+
+                QThreadPool::globalInstance()->start(pTask);
+
+
+                emit q->performingResetMachine();
+            }
+            break;
+
+        case Event::GetCurrentStatus:
+            {
+                MachineCurrentStatusTask* pTask = new MachineCurrentStatusTask(m_LoginComputerName,
+                                                                  event.sessionId,
+                                                                  event.machineId);
+
+                q->connect(pTask, &MachineCurrentStatusTask::taskCompleted,
+                        q, &LoginLauncher::onGetMachineStatusFinished);
+
+                QThreadPool::globalInstance()->start(pTask);
+
+
+                emit q->performingGetMachineStatus();
+            }
+            break;
+
         case Event::SeekComputer:
             {
-                if (m_State != StateSeekComputer &&
-                    m_State != StateComputerConnected)
+                if (m_State != StateSeekComputer)
                 {
                     m_State = StateSeekComputer;
                     m_ComputerManager = event.computerManager;
@@ -185,9 +218,24 @@ public:
             break;
         case Event::ComputerUpdated:
             if (m_State == StateSeekComputer) {
-                m_State = StateComputerConnected;
-                emit q->computerReady(event.computer->pairState == NvComputer::PS_PAIRED,
-                                      event.index);
+
+                QString appName = getFirstAppName(event.computer);
+                Session* session = 0;
+                if (!appName.isEmpty())
+                {
+                    m_State = StateComputerConnected;
+                    NvApp app = event.computer->appList.at(0);
+
+                    session = new Session(event.computer, app);
+
+                    emit q->computerReady(event.computer->pairState == NvComputer::PS_PAIRED,
+                                          event.index,
+                                          0,
+                                          appName,
+                                          session);
+                }
+
+                qDebug() << Q_FUNC_INFO << event.computer->name << " app:" << appName;
             }
             break;
 
@@ -207,6 +255,16 @@ public:
             }
             break;
         }
+    }
+
+    QString getFirstAppName(NvComputer* computer) const
+    {
+        if (computer->appList.length()>0)
+        {
+            qDebug() << Q_FUNC_INFO << computer->appList[0].name;
+            return computer->appList[0].name;
+        }
+        return "";
     }
 
     LoginLauncher *q_ptr;
@@ -279,6 +337,26 @@ void LoginLauncher::changePassword(QString userName, QString oldPassword, QStrin
     event.userName = userName;
     event.oldPassword = oldPassword;
     event.newPassword = newPassword;
+
+    d->handleEvent(event);
+}
+
+void LoginLauncher::resetMachine(QString machineId)
+{
+    Q_D(LoginLauncher);
+    Event event(Event::ResetMachine);
+    event.sessionId = d->m_sessionId;
+    event.machineId = machineId;
+
+    d->handleEvent(event);
+}
+
+void LoginLauncher::getMachineStatus(QString machineId)
+{
+    Q_D(LoginLauncher);
+    Event event(Event::GetCurrentStatus);
+    event.sessionId = d->m_sessionId;
+    event.machineId = machineId;
 
     d->handleEvent(event);
 }
@@ -356,6 +434,20 @@ void LoginLauncher::onChangePasswordFinished(bool ok, QString msg)
     Q_D(LoginLauncher);
     qDebug() << Q_FUNC_INFO<< ok << msg;
     emit changePasswordDone(ok, msg);
+}
+
+void LoginLauncher::onResetMachineFinished(bool ok, QString msg)
+{
+    Q_D(LoginLauncher);
+    qDebug() << Q_FUNC_INFO<< ok << msg;
+    emit resetMachineDone(ok, msg);
+}
+
+void LoginLauncher::onGetMachineStatusFinished(bool ok, int status, QString desc)
+{
+    Q_D(LoginLauncher);
+    qDebug() << Q_FUNC_INFO<< ok << status << desc;
+    emit getMachineStatusDone(ok, status, desc);
 }
 
 void LoginLauncher::onGetMyCredentialsFinished(bool ok,

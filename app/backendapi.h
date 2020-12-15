@@ -34,6 +34,10 @@ public:
 
     bool pushStats(QString &stats);
 
+    bool resetMachine(QString machineId);
+
+    bool getMachineStatus(QString machineId, int &machineStatus, QString &statusDesc);
+
 
     QString
     openConnectionToString(QUrl baseUrl,
@@ -53,6 +57,9 @@ private:
                               QString &myServerUuid,
                               QString &myServerCert);
     bool loginMock(QString userName, QString password, QString& sessionId);
+
+    bool resetMachineMock(QString machineId);
+    bool getMachineStatusMock(QString machineId, int &machineStatus, QString &statusDesc);
 
     bool changePasswordMock(QString oldPassword, QString newPassword);
 

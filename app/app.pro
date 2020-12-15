@@ -135,6 +135,7 @@ macx {
 SOURCES += \
     backend/nvapp.cpp \
     backendapi.cpp \
+    gui/cloudcomputermodel.cpp \
     loginlauncher.cpp \
     main.cpp \
     backend/computerseeker.cpp \
@@ -173,6 +174,7 @@ SOURCES += \
 HEADERS += \
     backend/nvapp.h \
     backendapi.h \
+    gui/cloudcomputermodel.h \
     loginlauncher.h \
     statssingleton.h \
     utils.h \

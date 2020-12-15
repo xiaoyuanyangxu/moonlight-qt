@@ -97,6 +97,77 @@ private:
     QString m_newPassword;
 };
 
+class ResetMachineTask: public QObject, public QRunnable
+{
+    Q_OBJECT
+
+public:
+
+    explicit ResetMachineTask(    QString baseUrl,
+                                  QString sessionId,
+                                  QString machineId)
+        : m_baseUrl(baseUrl),
+          m_sessionId(sessionId),
+          m_machineId(machineId)
+    {
+
+    }
+
+    ~ResetMachineTask(){}
+
+signals:
+    void taskCompleted(bool ok, QString msg);
+
+private:
+    void run()
+    {
+        BackendAPI backend(m_baseUrl,m_sessionId);
+        QString msg;
+        bool ok = backend.resetMachine(m_machineId);
+        emit taskCompleted(ok, msg);
+    }
+    QString m_baseUrl;
+    QString m_sessionId;
+    QString m_machineId;
+};
+
+class MachineCurrentStatusTask: public QObject, public QRunnable
+{
+    Q_OBJECT
+
+public:
+
+    explicit MachineCurrentStatusTask( QString baseUrl,
+                                  QString sessionId,
+                                  QString machineId)
+        : m_baseUrl(baseUrl),
+          m_sessionId(sessionId),
+          m_machineId(machineId)
+    {
+
+    }
+
+    ~MachineCurrentStatusTask(){}
+
+signals:
+    void taskCompleted(bool ok, int status, QString description);
+
+private:
+    void run()
+    {
+        BackendAPI backend(m_baseUrl,m_sessionId);
+        QString desc;
+        int status;
+        bool ok = backend.getMachineStatus(m_machineId, status, desc);
+        emit taskCompleted(ok, status, desc);
+    }
+    QString m_baseUrl;
+    QString m_sessionId;
+    QString m_machineId;
+};
+
+
+
 class GetCredentialTask: public QObject, public QRunnable
 {
     Q_OBJECT
@@ -160,6 +231,8 @@ public:
     Q_INVOKABLE void login(QString username, QString password);
     Q_INVOKABLE void logout();
     Q_INVOKABLE void changePassword(QString username, QString oldPassword, QString newPassword);
+    Q_INVOKABLE void resetMachine(QString machineId);
+    Q_INVOKABLE void getMachineStatus(QString machineId);
 
 
     Q_INVOKABLE void seekComputer(ComputerManager *manager,
@@ -185,19 +258,24 @@ signals:
                            QString myServerCert);
     void logginDone(bool ok, QString data);
     void changePasswordDone(bool ok, QString msg);
+    void resetMachineDone(bool ok, QString msg);
+    void getMachineStatusDone(bool ok, int status, QString desc);
 
     void performingLogin();
     void performingGetMyCreadentials();
     void performingChangePassword();
+    void performingResetMachine();
+    void performingGetMachineStatus();
 
     void searchingComputer();
     void searchingComputerDone(bool ok, QString data);
 
-    void computerReady(bool enabled, int index);
+    void computerReady(bool enabled, int index, int appIndex, QString appName, Session* session);
 
 public slots:
     void onLoginFinished(bool ok, QString data);
     void onChangePasswordFinished(bool ok, QString msg);
+    void onResetMachineFinished(bool ok, QString msg);
     void onGetMyCredentialsFinished(bool ok,
                                     QString myId, QString myCred, QString myKey,
                                     QString myServerIp, QString myServerName,
@@ -206,6 +284,7 @@ public slots:
     void onComputerUpdated(NvComputer *computer);
     void onTimeout();
     void onQuitAppCompleted(QVariant error);
+    void onGetMachineStatusFinished(bool ok, int status, QString desc);
 
 private:
     QScopedPointer<LoginLauncherPrivate> m_DPtr;

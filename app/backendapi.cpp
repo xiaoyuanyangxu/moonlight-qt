@@ -138,7 +138,7 @@ bool BackendAPI::getMyCredentials(QString &myId,
             myKey = myKey.replace("\\n","\n");
             myKey = myKey.replace("\\\\","\\");
             myServerIP = msgObj["ip"].toString();
-            myServerName = msgObj["serverName"].toString();
+            myServerName = msgObj["hostname"].toString();
             myServerUuid = msgObj["serverUuid"].toString();
             myServerCert = msgObj["serverCert"].toString();
             myServerCert = myServerCert.replace("\\n","\n");
@@ -160,7 +160,7 @@ bool BackendAPI::pushStats(QString &stats)
 
     qDebug() << Q_FUNC_INFO << stats;
 
-    return true;  // Mocked
+    // return true;  // Mocked
 
     try {
         QMap<QString,QString> headers;
@@ -177,6 +177,98 @@ bool BackendAPI::pushStats(QString &stats)
                                        );
 
         return (status == 200);
+    } catch (...) {
+        qWarning() << Q_FUNC_INFO << "Exception detected";
+    }
+    return false;
+}
+
+bool BackendAPI::resetMachine(QString machineId)
+{
+    qDebug() << Q_FUNC_INFO << machineId;
+
+    return resetMachineMock(machineId);
+
+    QString answer;
+
+    try {
+        /*
+        POST http://{{host}}:{{port}}/api/v1/vms/:vmId/reset
+
+        RESPONSE:
+            - 200 OK
+            - 403 FORBBIDEN
+            - 504 Gateway timeout <--Error in VM Infra
+        */
+        QMap<QString,QString> headers;
+        int status;
+        headers["Cookie"] = m_SessionId;
+        answer = openConnectionToString(m_BaseUrl,
+                                        "api/v1/vm/0/reset",
+                                        nullptr,
+                                        headers,
+                                        REQUEST_TIMEOUT_MS,
+                                        true,QByteArray(),
+                                        nullptr, status
+                                       );
+
+        return (status == 200);
+    } catch (...) {
+        qWarning() << Q_FUNC_INFO << "Exception detected";
+    }
+    return false;
+}
+
+bool BackendAPI::getMachineStatus(QString machineId, int &machineStatus, QString &statusDesc)
+{
+    QString answer;
+
+    qDebug() << Q_FUNC_INFO << machineId;
+
+    return getMachineStatusMock(machineId, machineStatus, statusDesc);
+
+    try {
+        QMap<QString,QString> headers;
+        int status;
+        /*
+         GET http://{{host}}:{{port}}/api/v1/vms/:vmId/status
+
+            RESPONSE:
+            {
+                "status": 0,
+                "description": "Poweroff"
+            }
+
+            RESPONSE CODES:
+                - 0 - Poweroff
+                - 1 - Booting
+                - 2 - Started
+                - 3 - Rebooting
+                - 4 - Paused
+                - 9 - Undefined
+        */
+        headers["Cookie"] = m_SessionId;
+        answer = openConnectionToString(m_BaseUrl,
+                                        "api/v1/vms/0/status",
+                                        nullptr,
+                                        headers,
+                                        REQUEST_TIMEOUT_MS,
+                                        false,
+                                        QByteArray(),
+                                        nullptr, status);
+
+        qDebug() << Q_FUNC_INFO << "Ack:" << answer;
+
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(answer.toUtf8());
+        QJsonObject msgObj = jsonDoc.object();
+        if (status == 200)
+        {
+            machineStatus = msgObj["status"].toInt();
+            statusDesc = msgObj["description"].toString();
+            return true;
+        }else{
+            qWarning() << Q_FUNC_INFO << "Ack: status is not ok";
+        }
     } catch (...) {
         qWarning() << Q_FUNC_INFO << "Exception detected";
     }
@@ -317,6 +409,46 @@ bool BackendAPI::loginMock(QString userName, QString password, QString &sessionI
         qWarning() << Q_FUNC_INFO << "Exception detected";
     }
     return false;
+}
+
+bool BackendAPI::resetMachineMock(QString machineId)
+{
+    Q_UNUSED(machineId)
+
+    int responseTime = rand() % 3000;
+    QTime dieTime= QTime::currentTime().addMSecs(responseTime);
+    while (QTime::currentTime() < dieTime)
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+
+    bool result = (rand()%1000 > 500);
+
+    qDebug() << Q_FUNC_INFO << "ResponseTime: " << responseTime << "ms return:"<< result;
+
+    return result;
+}
+
+bool BackendAPI::getMachineStatusMock(QString machineId, int &machineStatus, QString &statusDesc)
+{
+    Q_UNUSED(machineId)
+
+    int responseTime = rand() % 3000;
+    QTime dieTime= QTime::currentTime().addMSecs(responseTime);
+    while (QTime::currentTime() < dieTime)
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+
+    bool result = (rand()%1000 > 100) ;
+
+    if (result){
+
+        machineStatus = rand()%10;
+        if (machineStatus > 3) {
+            machineStatus = 2;
+        }
+        statusDesc = "mock";
+    }
+    qDebug() << Q_FUNC_INFO << "ResponseTime: " << responseTime << "ms return:"<< result << " status:" << machineStatus;
+
+    return result;
 }
 
 bool BackendAPI::changePasswordMock(QString oldPassword, QString newPassword)
