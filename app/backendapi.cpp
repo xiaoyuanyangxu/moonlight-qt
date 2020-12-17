@@ -43,9 +43,10 @@ QString BackendAPI::getBasicAuthHeader(QString username, QString password)
     return headerData;
 }
 
-bool BackendAPI::login(QString userName, QString password, QString &sessionId)
+bool BackendAPI::login(QString userName, QString password, QString &sessionId, QString &errorMsg)
 {
     QString answer;
+    int status;
 
     //return loginMock(userName, password, sessionId);
 
@@ -53,7 +54,7 @@ bool BackendAPI::login(QString userName, QString password, QString &sessionId)
         QString postBody = QString("{\n\"email\": \"%1\",\n\"password\":\"%2\"\n}\n\n").arg(userName).arg(password);
         QMap<QString,QString> headers;
         QList<QNetworkCookie> cookies;
-        int status;
+
         //headers["content-type"] = "application/json";
         answer = openConnectionToString(m_BaseUrl,
                                         "api/v1/auth/login",
@@ -84,10 +85,18 @@ bool BackendAPI::login(QString userName, QString password, QString &sessionId)
         {
             return true;
         }else{
+            qWarning() << Q_FUNC_INFO << "sessionId null";
+            errorMsg = "Empty answer from server";
             return false;
         }
-    } catch (...) {
-        qWarning() << Q_FUNC_INFO << "Exception detected";
+    } catch (QtNetworkReplyException e) {
+        if (e.getError() < 200)
+        {
+            errorMsg = "Network failure, please check your Internet Connection";
+        }else{
+            errorMsg = e.toQString();
+        }
+        qWarning() << Q_FUNC_INFO << "Exception detected" << status  << " msg:" << e.toQString() << " txt:" << e.getErrorText() << " e:" << e.getError();
     }
     return false;
 }
@@ -103,7 +112,8 @@ bool BackendAPI::getMyCredentials(QString &myId,
                                   QString &myServerIP,
                                   QString &myServerName,
                                   QString &myServerUuid,
-                                  QString &myServerCert)
+                                  QString &myServerCert,
+                                  QString &errorMsg)
 {
     //return getMyCredentialsMock(myId, myCert, myKey, myServerIP, myServerName, myServerUuid, myServerCert);
 
@@ -184,7 +194,7 @@ bool BackendAPI::pushStats(QString &stats)
     return false;
 }
 
-bool BackendAPI::resetMachine(QString machineId)
+bool BackendAPI::resetMachine(QString machineId, QString &errorMsg)
 {
     qDebug() << Q_FUNC_INFO << machineId;
 
@@ -499,6 +509,7 @@ QString BackendAPI::openConnectionToString(QUrl baseUrl,
    }
 
    QVariant status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
+   qDebug() << Q_FUNC_INFO << "Got response: "<< status.toInt();
    if (status.isValid()){
        // Print or catch the status code
        statusCode = status.toUInt(0);
@@ -606,6 +617,7 @@ QNetworkReply *BackendAPI::openConnection(QUrl baseUrl,
             throw exception;
         }
     }
+
 
     return reply;
 }

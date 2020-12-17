@@ -105,7 +105,7 @@ Item {
             sessionId = id
             launcher.getMyCredentials(sessionId)
         }else{
-            stageLabel.text = "Loggin failed!"
+            stageLabel.text = "Loggin failed! " + id
             loginRequired = true
             animateOpacityUp.start()
         }

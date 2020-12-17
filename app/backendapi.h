@@ -18,7 +18,7 @@ public:
     static
     QString getBasicAuthHeader(QString username, QString password);
 
-    bool login(QString userName, QString password, QString& sessionId);
+    bool login(QString userName, QString password, QString& sessionId, QString &errorMsg);
 
     bool changePassword(QString userName, QString oldPassword, QString newPassword, QString &msg);
 
@@ -30,11 +30,12 @@ public:
                           QString &myServerIP,
                           QString &myServerName,
                           QString &myServerUuid,
-                          QString &myServerCert);
+                          QString &myServerCert,
+                          QString &errorMsg);
 
     bool pushStats(QString &stats);
 
-    bool resetMachine(QString machineId);
+    bool resetMachine(QString machineId, QString &errorMsg);
 
     bool getMachineStatus(QString machineId, int &machineStatus, QString &statusDesc);
 

@@ -46,9 +46,11 @@ private:
     {
         BackendAPI backend(m_baseUrl,"");
         QString sessionId;
-        bool ok = backend.login(m_userName, m_password, sessionId);
+        QString errorMsg;
 
-        emit taskCompleted(ok, sessionId);
+        bool ok = backend.login(m_userName, m_password, sessionId, errorMsg);
+
+        emit taskCompleted(ok, ok?sessionId:errorMsg);
 
     }
     QString m_baseUrl;
@@ -122,9 +124,9 @@ private:
     void run()
     {
         BackendAPI backend(m_baseUrl,m_sessionId);
-        QString msg;
-        bool ok = backend.resetMachine(m_machineId);
-        emit taskCompleted(ok, msg);
+        QString errorMsg;
+        bool ok = backend.resetMachine(m_machineId, errorMsg);
+        emit taskCompleted(ok, errorMsg);
     }
     QString m_baseUrl;
     QString m_sessionId;
@@ -190,7 +192,8 @@ signals:
                        QString myServerIP,
                        QString myServerName,
                        QString myServerUuid,
-                       QString myServerCert);
+                       QString myServerCert,
+                       QString errorMsg);
 
 private:
     void run()
@@ -199,6 +202,7 @@ private:
         BackendAPI backend(m_baseUrl,
                            m_sessionId);
         QString myId, myCert, myKey, myServerIP, myServerName, myServerUuid, myServerCert;
+        QString errorMsg;
 
         bool ok = backend.getMyCredentials(myId,
                                            myCert,
@@ -206,10 +210,12 @@ private:
                                            myServerIP,
                                            myServerName,
                                            myServerUuid,
-                                           myServerCert);
+                                           myServerCert,
+                                           errorMsg);
 
         emit taskCompleted(ok, myId, myCert, myKey, myServerIP,
-                           myServerName, myServerUuid, myServerCert);
+                           myServerName, myServerUuid, myServerCert,
+                           errorMsg);
 
     }
     QString m_baseUrl;
