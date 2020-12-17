@@ -34,6 +34,8 @@
         <file>res/user.svg</file>
         <file>res/user_white.svg</file>
         <file>res/password.svg</file>
+        <file>res/eye.svg</file>
+        <file>res/eye.png</file>
     </qresource>
     <qresource prefix="/data">
         <file alias="gamecontrollerdb.txt">SDL_GameControllerDB/gamecontrollerdb.txt</file>

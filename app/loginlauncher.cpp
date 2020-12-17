@@ -240,7 +240,7 @@ public:
             break;
 
         case Event::Timedout:
-            qDebug() << "Timeout";
+            qDebug() << "Timeout" << m_State;
             if (m_State == StatePerformLogin) {
                 m_State = StateLoginFailure;
                 q->onLoginFinished(false, QString("Failed to login"));
@@ -251,7 +251,14 @@ public:
             }
             if (m_State == StateSeekComputer) {
                 m_State = StateLoginFailure;
-                q->onComputerFound(0);
+
+                qDebug() << "Emit computerReady with error";
+
+                emit q->computerReady(false,
+                                      0,
+                                      0,
+                                      "",
+                                      nullptr);
             }
             break;
         }
@@ -404,6 +411,12 @@ bool LoginLauncher::isExecuted() const
     return d->m_State != StateInit;
 }
 
+bool LoginLauncher::isLoginSuccess() const
+{
+    Q_D(const LoginLauncher);
+    return d->m_sessionId.isEmpty() == false;
+}
+
 QString LoginLauncher::getCachedSessionCookie()
 {
     QSettings settings;
@@ -459,10 +472,12 @@ void LoginLauncher::onGetMyCredentialsFinished(bool ok,
                                                QString myServerUuid,
                                                QString myServerCert)
 {
-    Q_D(const LoginLauncher);
+    Q_D(LoginLauncher);
     if (ok)
     {
         StatsSingleton::getInstance()->initialize(m_DPtr->m_LoginComputerName, d->m_sessionId);
+    }else{
+        d->m_sessionId = "";
     }
     emit myCredentialsDone(ok, myId, myCred, myKey, myServerIp,
                            myServerName, myServerUuid, myServerCert);

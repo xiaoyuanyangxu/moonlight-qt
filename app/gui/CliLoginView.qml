@@ -159,15 +159,18 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
         }
 
-        TextField {
-            id: password
-            placeholderText: "Password"
-            width: login.font.pixelSize*17
-            horizontalAlignment: TextInput.AlignHCenter
-            echoMode: TextInput.Password
-            enabled: loginRequired && !contactingWithBackend
-            visible: loginRequired
+        Row {
             anchors.horizontalCenter: parent.horizontalCenter
+            TextField {
+                id: password
+                placeholderText: "Password"
+                width: login.font.pixelSize*17
+                horizontalAlignment: TextInput.AlignHCenter
+                echoMode: TextInput.Password
+                enabled: loginRequired && !contactingWithBackend
+                visible: loginRequired
+                passwordMaskDelay: 1000
+            }
         }
 
         Button {

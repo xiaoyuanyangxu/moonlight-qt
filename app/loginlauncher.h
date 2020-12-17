@@ -245,6 +245,8 @@ public:
                                   QString cert);
     Q_INVOKABLE void quitRunningApp();
     Q_INVOKABLE bool isExecuted() const;
+    Q_INVOKABLE bool isLoginSuccess() const;
+
     Q_INVOKABLE QString getCachedSessionCookie();
     Q_INVOKABLE QString getLastUsername();
 

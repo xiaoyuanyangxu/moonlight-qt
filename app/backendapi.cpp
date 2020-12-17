@@ -17,6 +17,7 @@
 #include <backend/nvhttp.h>
 
 #define REQUEST_TIMEOUT_MS 5000
+#define RESET_REQUEST_TIMEOUT_MS 10000
 
 BackendAPI::BackendAPI(QString baseUrl,
                        QString sessionId,
@@ -187,7 +188,7 @@ bool BackendAPI::resetMachine(QString machineId)
 {
     qDebug() << Q_FUNC_INFO << machineId;
 
-    return resetMachineMock(machineId);
+    // return resetMachineMock(machineId);
 
     QString answer;
 
@@ -204,10 +205,10 @@ bool BackendAPI::resetMachine(QString machineId)
         int status;
         headers["Cookie"] = m_SessionId;
         answer = openConnectionToString(m_BaseUrl,
-                                        "api/v1/vm/0/reset",
+                                        "api/v1/vms/0/reset",
                                         nullptr,
                                         headers,
-                                        REQUEST_TIMEOUT_MS,
+                                        RESET_REQUEST_TIMEOUT_MS,
                                         true,QByteArray(),
                                         nullptr, status
                                        );
@@ -225,7 +226,7 @@ bool BackendAPI::getMachineStatus(QString machineId, int &machineStatus, QString
 
     qDebug() << Q_FUNC_INFO << machineId;
 
-    return getMachineStatusMock(machineId, machineStatus, statusDesc);
+    // return getMachineStatusMock(machineId, machineStatus, statusDesc);
 
     try {
         QMap<QString,QString> headers;

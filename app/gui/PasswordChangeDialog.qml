@@ -23,6 +23,7 @@ NavigableDialog {
             id: oldPass
             placeholderText: "Enter your old password"
             echoMode: TextInput.Password
+            passwordMaskDelay: 1000
             focus: true
         }
         TextField {
@@ -30,12 +31,14 @@ NavigableDialog {
             id: newPass
             placeholderText: "Enter your new password"
             echoMode: TextInput.Password
+            passwordMaskDelay: 1000
         }
         TextField {
             width: 250
             id: newPass2
             placeholderText: "Please repeat"
             echoMode: TextInput.Password
+            passwordMaskDelay: 1000
         }
         Row {
             width: parent.width
